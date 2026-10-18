@@ -1,4 +1,4 @@
-export const ANALYTICS_RANGES = [7, 30, 90] as const;
+export const ANALYTICS_RANGES = [1, 7, 30, 90] as const;
 export type AnalyticsRange = typeof ANALYTICS_RANGES[number];
 export type AnalyticsKind = "summary" | "realtime";
 

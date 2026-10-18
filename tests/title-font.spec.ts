@@ -4,7 +4,7 @@ test("页面标题的中文实际使用线上 UnboundedSans 字体", async ({ pa
   const session = await context.newCDPSession(page);
   await session.send("DOM.enable");
   await session.send("CSS.enable");
-  for (const path of ["/", "/anutrium/monitor/ga4", "/anutrium/features", "/anutrium/data"]) {
+  for (const path of ["/anutrium", "/anutrium/monitor/ga4", "/anutrium/features", "/anutrium/data", "/anutrium/about", "/drrr", "/drrr/about"]) {
     await page.goto(path);
     const title = page.locator(".page-heading h1");
     await expect(title).toBeVisible();

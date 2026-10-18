@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { createPortal, flushSync } from "react-dom";
+import { createPortal } from "react-dom";
 import {
   ANALYTICS_RANGES, METRICS, METRIC_DESCRIPTIONS, PRIMARY_METRICS, OVERVIEW_METRICS, REPORT_GROUPS, REPORTS, formatMetric, rowLabel,
   type AnalyticsRange, type AnalyticsReport, type RealtimeAnalytics, type SiteAnalytics,
 } from "@/lib/analytics";
 import { useAnalytics } from "./use-analytics";
 import { RelativeTime } from "./relative-time";
+import { AnalyticsLinks } from "./analytics-links";
+
+function RetryButton({ onClick }: { onClick: () => void }) {
+  return <button className="monitor-retry" type="button" onClick={onClick}>
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13.5 7A5.5 5.5 0 1 0 13 10M13.5 3.5V7H10" /></svg>重试
+  </button>;
+}
 
 function OverviewMetric({ name, value }: { name: string; value?: number }) {
   const tooltipId = useId();
@@ -88,22 +95,14 @@ function Trend({ report, loading }: { report?: AnalyticsReport; loading: boolean
 export function MonitorDashboard() {
   const [statusTarget, setStatusTarget] = useState<HTMLElement | null>(null);
   useEffect(() => { setStatusTarget(document.getElementById("route-heading-status")); }, []);
-  const [days, setDays] = useState<AnalyticsRange>(7);
+  const [days, setDays] = useState<AnalyticsRange>(1);
   const [moreOpen, setMoreOpen] = useState(false);
   const activityRow = useRef<HTMLDivElement>(null);
   const [expandedHeight, setExpandedHeight] = useState<number>();
-  const overviewTransition = useRef<ViewTransition | null>(null);
   function toggleOverview() {
-    const update = () => {
-      if (!moreOpen) setExpandedHeight(activityRow.current?.getBoundingClientRect().height);
-      setMoreOpen(open => !open);
-    };
-    if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      update();
-      return;
-    }
-    overviewTransition.current?.skipTransition();
-    overviewTransition.current = document.startViewTransition(() => { flushSync(update); });
+    // 展开时保持整行原有高度，避免右侧卡片隐藏后影响后续内容位置。
+    if (!moreOpen) setExpandedHeight(activityRow.current?.getBoundingClientRect().height);
+    setMoreOpen(open => !open);
   }
   const [refresh, setRefresh] = useState(0);
   const [group, setGroup] = useState(0);
@@ -120,14 +119,16 @@ export function MonitorDashboard() {
   return <section className="monitor-dashboard" aria-label="监视器内容区">
     {statusTarget && (data || realtime.data) && !summary.error && !realtime.error && createPortal(<span className="monitor-connection" role="status"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>已链接GA4</span>, statusTarget)}
     <div className="monitor-meta">
-      <span>{summary.loading ? "正在读取统计…" : <>更新于 <RelativeTime value={data?.generatedAt} /></>}</span>
       <div className="monitor-meta-actions">
         <div className="monitor-options" role="group" aria-label="统计时间范围">
-          {ANALYTICS_RANGES.map(range => <button type="button" key={range} aria-pressed={days === range} onClick={() => setDays(range)}>近 {range} 天</button>)}
+          {ANALYTICS_RANGES.map(range => <button type="button" key={range} aria-pressed={days === range} onClick={() => setDays(range)}>{range === 1 ? "今天" : `近 ${range} 天`}</button>)}
         </div>
       </div>
+      {summary.error ? <div className="monitor-summary-error" role="alert" title={`${summary.error}${data ? " 当前保留上次结果。" : ""}`}>
+        <span>{summary.error.includes("尚未配置") ? "尚未配置" : "读取失败"}{data && <span className="monitor-stale-note">（保留上次结果）</span>}</span>
+        <RetryButton onClick={() => setRefresh(value => value + 1)} />
+      </div> : <span>{summary.loading ? "正在读取统计…" : <>更新于 <RelativeTime value={data?.generatedAt} /></>}</span>}
     </div>
-    {summary.error && <p className="monitor-error" role="alert">{summary.error}{data ? " 当前保留上次结果。" : ""}<button className="monitor-retry" type="button" onClick={() => setRefresh(value => value + 1)}>重新读取</button></p>}
     {!!data?.reports.length && data.reports.every(report => report.status === "unavailable") && <p className="monitor-note">所有报表暂不可用，请稍后重试。</p>}
     <div ref={activityRow} className={`monitor-activity-row${moreOpen ? " monitor-activity-expanded" : ""}`} style={{ minHeight: moreOpen ? expandedHeight : undefined }}>
     <section className="monitor-card monitor-overview" aria-label="概览" aria-busy={summary.loading}>
@@ -149,7 +150,7 @@ export function MonitorDashboard() {
           <strong>{formatMetric("activeUsers", realtime.data?.activeUsers)}</strong>
           <p>更新于 <RelativeTime value={realtime.data?.generatedAt} /></p>
         </div>
-        {realtime.error && <p className="monitor-error" role="alert">实时统计：{realtime.error}{realtime.data ? " 当前保留上次结果。" : ""}<button className="monitor-retry" type="button" onClick={() => setRefresh(value => value + 1)}>重新读取</button></p>}
+        {realtime.error && <p className="monitor-error" role="alert">实时统计：{realtime.error}{realtime.data ? " 当前保留上次结果。" : ""}<RetryButton onClick={() => setRefresh(value => value + 1)} /></p>}
       </section>
       <ReportTable className="monitor-live-countries" id="realtimeCountries" report={liveReports.get("realtimeCountries")} loading={realtime.loading} />
       <ReportTable className="monitor-live-events" id="realtimeEvents" report={liveReports.get("realtimeEvents")} loading={realtime.loading} />
@@ -160,6 +161,6 @@ export function MonitorDashboard() {
       <div className="monitor-section-heading"><h2>分类报表</h2><div className="monitor-options monitor-groups" role="group" aria-label="报表分类">{REPORT_GROUPS.map((item, i) => <button key={item.title} type="button" aria-pressed={group === i} onClick={() => setGroup(i)}>{item.title}</button>)}</div></div>
       <div className={`monitor-reports${["来源", "地域", "行为", "作品与工具"].includes(REPORT_GROUPS[group].title) ? " monitor-reports-three" : ""}${REPORT_GROUPS[group].title === "地域" ? " monitor-reports-region" : ""}${REPORT_GROUPS[group].title === "设备" ? " monitor-reports-devices" : ""}`}>{REPORT_GROUPS[group].ids.map(id => <ReportTable key={id} id={id} report={reports.get(id)} loading={summary.loading} />)}</div>
     </section>
-    <p className="monitor-note">常规报表可能存在处理延迟。暂无数据与读取失败会分别显示。</p>
+    <AnalyticsLinks />
   </section>;
 }

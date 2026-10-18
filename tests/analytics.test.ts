@@ -1,11 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatMetric, isAnalyticsPayload, rowLabel } from "../src/lib/analytics.ts";
+import { ANALYTICS_RANGES, formatMetric, isAnalyticsPayload, rowLabel } from "../src/lib/analytics.ts";
 
 const report = { id: "overview", status: "ready", rows: [{ dimensions: [], metrics: { activeUsers: 0 } }], rowCount: 1, thresholded: false, sampled: false, dataLoss: false };
 const summary = { days: 30, generatedAt: "2026-10-17T01:00:00Z", timeZone: "Asia/Shanghai", reports: [report] };
 
 test("统计契约接受真实零值、空数据及部分失败", () => {
+  assert.equal(ANALYTICS_RANGES.includes(1), true);
+  assert.equal(isAnalyticsPayload({ ...summary, days: 1 }, "summary", 1), true);
   assert.equal(isAnalyticsPayload(summary, "summary", 30), true);
   assert.equal(isAnalyticsPayload({ ...summary, reports: [{ ...report, status: "unavailable", rows: [] }] }, "summary", 30), true);
   assert.equal(isAnalyticsPayload({ generatedAt: summary.generatedAt, activeUsers: 0, reports: [] }, "realtime"), true);

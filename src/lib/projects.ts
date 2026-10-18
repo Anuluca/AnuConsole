@@ -13,6 +13,9 @@ type Project = {
   title: string;
   accent: string;
   onAccent: string;
+  // 可选的主题覆盖；未提供的主题或前景色沿用 accent / onAccent。
+  themeColors?: Partial<Record<"light" | "dark", { accent: string; onAccent?: string }>>;
+  logoSrc: string;
   siteUrl?: string;
   routes: readonly RouteItem[];
 };
@@ -24,7 +27,7 @@ const shared = (id: ProjectId, key: "home" | "about", label: string): RouteItem 
 
 export const projects: readonly Project[] = [
   {
-    id: "anutrium", title: "Anutrium", accent: "#E23456", onAccent: "#fff", siteUrl: "https://anuluca.com",
+    id: "anutrium", title: "Anutrium", accent: "#E23456", onAccent: "#fff", logoSrc: "/anutrium-logo.png", siteUrl: "https://anuluca.com",
     routes: [
       shared("anutrium", "home", "首页"),
       { key: "monitor", label: "监视器", href: "/anutrium/monitor", children: [
@@ -36,7 +39,8 @@ export const projects: readonly Project[] = [
     ]
   },
   {
-    id: "drrr", title: "DRRR情报屋", accent: "#f4f500", onAccent: "#17191b",
+    id: "drrr", title: "DRRR情报屋", accent: "#f4f500", onAccent: "#17191b", logoSrc: "/drrr-logo.svg", siteUrl: "https://drrr.anuluca.com",
+    themeColors: { light: { accent: "#686900", onAccent: "#fff" } },
     routes: [shared("drrr", "home", "首页"), shared("drrr", "about", "关于")]
   }
 ];

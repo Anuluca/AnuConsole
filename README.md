@@ -1,6 +1,6 @@
 # AnuConsole
 
-Anutrium（[anuluca.com](https://anuluca.com)）的独立管理后台。Next.js App Router、React、TypeScript；主题色 `#E23456`。
+Anutrium（[anuluca.com](https://anuluca.com)）与 DRRR情报屋的管理后台。Next.js App Router、React、TypeScript；项目强调色分别为 `#E23456` 与 `#f4f500`。
 
 ## 本地运行
 
@@ -11,17 +11,18 @@ npm run dev
 
 打开 [http://127.0.0.1:3002](http://127.0.0.1:3002)。账号固定为 `admin`，密码通过交互式命令设置。当前机器已配置 `.env.local` 时跳过初始化。开发服务默认由用户启动并保持运行，助手仅复用该服务。
 
-`npm run dev` 的开发环境可直接访问四个业务页面，无需登录或配置管理员。生产环境 `npm run build` / `npm run start` 仍需配置管理员并登录。开发环境保留 `/login` 供预览登录界面。
+`npm run dev` 的开发环境可直接访问业务页面，无需登录或配置管理员。生产环境 `npm run build` / `npm run start` 仍需配置管理员并登录。开发环境保留 `/login` 供预览登录界面。
 
 | 路由 | 页面 | 访问权限 |
 | --- | --- | --- |
 | `/login` | 管理员登录 | 公开，已登录时跳转首页 |
-| `/` | 首页 | 开发免登录，生产 admin |
-| `/monitor/ga4` | 监视器 → GA4浏览量 | 开发免登录，生产 admin |
-| `/features` | 功能调整 | 开发免登录，生产 admin |
-| `/data` | 数据维护 | 开发免登录，生产 admin |
+| `/` | 跳转到 Anutrium 首页 | 开发免登录，生产 admin |
+| `/anutrium`、`/anutrium/about` | Anutrium 首页、关于 | 开发免登录，生产 admin |
+| `/anutrium/monitor/ga4` | Anutrium 监视器 → GA4浏览量 | 开发免登录，生产 admin |
+| `/anutrium/features`、`/anutrium/data` | Anutrium 功能调整、数据维护 | 开发免登录，生产 admin |
+| `/drrr`、`/drrr/about` | DRRR情报屋首页、关于 | 开发免登录，生产 admin |
 
-首页、功能调整和数据维护保留空内容区；监视器接入网站既有 GA4 聚合报表。
+首页、功能调整和数据维护保留空内容区；关于页介绍当前项目与控制台职能，并链接到 [AnuConsole GitHub 仓库](https://github.com/Anuluca/AnuConsole)。监视器接入网站既有 GA4 聚合报表。项目菜单与颜色在 `src/lib/projects.ts` 配置，页面 URL 包含项目名；旧业务地址不保留。
 
 界面字体使用 Adobe Typekit 项目 `vjg4wuk` 的 `alibaba-puhuiti`。右上角可选择自动、浅色或深色主题，默认按浏览器本地时间 07:00–19:00 显示浅色，其余时间显示深色；偏好保存在当前浏览器中。路由内容切换时快速闪烁两下，启用减少动态效果时关闭动画。Next.js 开发指示器已禁用。
 
@@ -65,13 +66,13 @@ npm run start
 
 生产环境必须通过 HTTPS 反向代理访问，默认仅监听 `127.0.0.1:3002`。Next.js 官方部署平台可使用其标准启动配置。
 
-当前视觉参考：[路卡的自由庭院岛](https://anulucas-blog.pages.dev/)。采用纯色背景与透明玻璃层级，以半透明、磨砂、细边框和间距区分导航、主体与内容面板；不使用背景图片，强调色保留 `#E23456`。
+当前视觉参考：[路卡的自由庭院岛](https://anulucas-blog.pages.dev/)。采用纯色背景与透明玻璃层级，以半透明、磨砂、细边框和间距区分导航、主体与内容面板；不使用背景图片，强调色跟随当前项目。
 
 ## 监视器
 
-“监视器”为可展开的菜单分组，子页面 `/monitor/ga4` 为“GA4浏览量”，旧地址 `/monitor` 自动跳转到子页面。子页面通过受保护的 `/api/analytics/summary?days=7|30|90` 和 `/api/analytics/realtime` 读取既有 Anutrium 统计接口。默认上游为 `https://steam-api.anuluca.com/analytics`；可通过服务端环境变量 `GA4_REPORTS_URL` 调整 HTTPS 地址，无须复制 Google 服务账号密钥。后台不加载 GA4 采集脚本。
+“监视器”为 Anutrium 的可展开菜单分组，子页面 `/anutrium/monitor/ga4` 为“GA4浏览量”，`/anutrium/monitor` 自动跳转到子页面。子页面通过受保护的 `/api/analytics/summary?days=1|7|30|90` 和 `/api/analytics/realtime` 读取既有 Anutrium 统计接口。默认上游为 `https://steam-api.anuluca.com/analytics`；可通过服务端环境变量 `GA4_REPORTS_URL` 调整 HTTPS 地址，无须复制 Google 服务账号密钥。后台不加载 GA4 采集脚本。今天（`days=1`）需要上游接口支持该范围后才能正常读取。
 
-- 默认展示近 7 天，保留近 7 / 30 / 90 天切换；移除顶部工具栏标题与说明；包含 11 项概览指标、每日趋势、23 份常规报表中的全部明细，以及实时活跃用户、国家和事件。
+- 默认展示今天，支持今天及近 7 / 30 / 90 天切换；移除顶部工具栏标题与说明；包含 11 项概览指标、每日趋势、23 份常规报表中的全部明细，以及实时活跃用户、国家和事件。
 - 更新时间使用 Day.js RelativeTime 的简体中文默认规则，自动显示几秒、分钟、小时、天、月或年前；悬停可查看北京时间的完整日期。
 - 常规数据仅含 `anuluca.com` 和 `www.anuluca.com`，实时数据按原数据流筛选，可能包含该流的其他域名访问。
 - 常规统计每 10 分钟读取，实时统计每分钟读取。切到后台暂停轮询，离开页面取消旧请求，重试复用上游当前缓存。
@@ -80,3 +81,30 @@ npm run start
 - 分类报表保留隐私阈值、抽样、高基数及前若干项的提示。趋势可展开每日数据，表格支持键盘横向滚动。
 
 检查监视器：`npm test`、`npm run typecheck` 和 `PLAYWRIGHT_CHANNEL=chrome npm run test:e2e -- tests/monitor.spec.ts`。浏览器界面测试使用明确的测试夹具；真实上游连通性需独立验证。
+
+## 功能调整
+
+`/anutrium/features` 的“首页”模块提供“路卡雕像的头疼模式”开关。页面先读取真实状态；读取失败时显示状态未知并禁用开关，重试后恢复。保存期间禁用开关，收到服务端成功结果后更新；保存失败则重新读取确认状态。
+
+浏览器只访问 `/api/features/home`；GET 和 PUT 均执行 `requireAdmin()`，PUT 还检查请求来源、JSON 类型、字段和请求体大小。后台使用服务端密钥代理 Worker 的 `/admin/home-features`，不向浏览器暴露密钥或上游错误详情。所有响应不缓存。
+
+上线前在 AnuConsole 的私密服务端环境和 Anutrium Worker Secret 中设置同一个安全随机 `HOME_FEATURES_TOKEN`（至少 32 字符）。上游地址默认 `https://steam-api.anuluca.com/admin/home-features`，可通过服务端 `HOME_FEATURES_URL` 覆盖。不要将密钥加入 `NEXT_PUBLIC_` 变量或提交到 Git。未配置时页面会提示“功能开关尚未配置”。
+
+配置保存在 Anutrium 既有 R2 桶内；新打开或刷新首页时生效，读取失败或超时默认普通模式。首次接入需部署 Worker、Anutrium 网站和 AnuConsole，后续切换无需部署。
+
+验证：`PLAYWRIGHT_CHANNEL=chrome npm run test:e2e -- tests/features.spec.ts`。界面测试使用明确的接口夹具，不修改线上配置。
+
+## 项目主题色
+
+所有项目（包括新增项目）统一在 `src/lib/projects.ts` 配置颜色。`accent` 是共用强调色，`onAccent` 是强调色按钮上的文字颜色；可用 `themeColors.light`、`themeColors.dark` 分别覆盖。未配置的主题或按钮文字色沿用共用值，自动主题按实际浅色或深色状态读取。选中项的淡色背景保留共用强调色。
+
+```ts
+// 不区分主题：两种主题都使用同一颜色（Anutrium）。
+accent: "#E23456",
+onAccent: "#fff",
+
+// 区分主题：浅色使用深黄，深色回退到共用亮黄（DRRR情报屋）。
+accent: "#f4f500",
+onAccent: "#17191b",
+themeColors: { light: { accent: "#686900", onAccent: "#fff" } },
+```

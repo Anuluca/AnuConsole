@@ -81,7 +81,10 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
   await expect(page.locator("nav[aria-label=\"主导航\"]")).not.toContainText(/Overview|Features|Data|01|02|03/);
   await expect(page.locator(".menu-icon")).toHaveCount(6);
   await expect(page.getByRole("navigation", { name: "面包屑" })).toContainText("关于");
-  await expect(page.locator(".empty-workspace")).toBeEmpty();
+  await expect(page.getByRole("region", { name: "关于内容区" })).toContainText("Anutrium 等多个项目的管理后台");
+  await expect(page.getByRole("region", { name: "关于内容区" })).not.toContainText(/当前项目|共用能力|项目源码/);
+  await expect(page.getByRole("link", { name: "在新标签页打开 AnuConsole GitHub 仓库" })).toHaveAttribute("href", "https://github.com/Anuluca/AnuConsole");
+  await expect(page.getByRole("link", { name: "在新标签页打开 Anutrium 网站" })).toHaveAttribute("href", "https://anuluca.com");
   await expect(page.locator(".console-footer")).toHaveCSS("justify-content", testInfo.project.name === "mobile" ? "space-between" : "flex-end");
   await expect(page.locator(".console-footer")).toHaveCSS("font-size", testInfo.project.name === "mobile" ? "9px" : "12px");
   await page.emulateMedia({ reducedMotion: "reduce" });

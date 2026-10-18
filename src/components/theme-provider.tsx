@@ -58,7 +58,8 @@ const themeOptions: { value: ThemeMode; label: string }[] = [
 ];
 
 function ThemeIcon({ mode }: { mode: ThemeMode }) {
-  return <svg width={mode === "auto" ? 12 : 16} height={mode === "auto" ? 12 : 16} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+  // 三种模式共用固定图标尺寸，保证下拉项和触发按钮的文字起点一致。
+  return <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
     {mode === "light" ? <><circle cx="10" cy="10" r="3.3" /><path d="M10 1.5v2m0 13v2M1.5 10h2m13 0h2M4 4l1.4 1.4m9.2 9.2L16 16M4 16l1.4-1.4m9.2-9.2L16 4" /></>
       : mode === "dark" ? <path d="M17.3 12.6A7.4 7.4 0 0 1 7.4 2.7a7.4 7.4 0 1 0 9.9 9.9Z" />
       : <><circle cx="10" cy="10" r="6.5" /><path d="M10 3.5a6.5 6.5 0 0 1 0 13Z" fill="currentColor" stroke="none" /></>}

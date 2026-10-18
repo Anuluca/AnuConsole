@@ -82,7 +82,15 @@ export function ConsoleShell({ children, developmentMode = false }: { children: 
             {monitorOpen && <div className="nav-group-list" id="monitor-navigation">{route.children.map(child => renderLink(child, true))}</div>}
           </div> : renderLink(route))}
         </nav>;
-  return <div className="console" data-project={project.id} style={{ "--accent": project.accent, "--on-accent": project.onAccent } as CSSProperties}>
+  return <div className="console" data-project={project.id} style={{
+    "--project-accent": project.accent,
+    "--project-on-accent": project.onAccent,
+    // 未配置的覆盖值不输出，由 CSS 回退到项目共用颜色。
+    "--project-accent-light": project.themeColors?.light?.accent,
+    "--project-accent-dark": project.themeColors?.dark?.accent,
+    "--project-on-accent-light": project.themeColors?.light?.onAccent,
+    "--project-on-accent-dark": project.themeColors?.dark?.onAccent
+  } as CSSProperties}>
     <a href="#main-content" className="skip-link">跳转到内容</a>
     <header className="topbar">
       <div className="topbar-projects"><Brand href={`/${project.id}`} subtitle="PROJECT BACKEND" /><ProjectSwitcher current={project.id} mobile={mobile} /></div>

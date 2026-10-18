@@ -2,9 +2,9 @@
 
 ## 项目范围
 
-- 本项目是独立的 Next.js 管理后台，用于维护 Anutrium（anuluca.com）。
-- 技术栈：Next.js App Router、React、TypeScript；主题色为 `#E23456`。
-- 业务路由依次为首页 `/`、监视器分组（GA4浏览量 `/monitor/ga4`，旧地址 `/monitor` 自动跳转）、功能调整 `/features`、数据维护 `/data`。没有明确需求时保持业务内容区为空。
+- 本项目是独立的 Next.js 多项目管理后台，当前维护 Anutrium（anuluca.com）与 DRRR情报屋。
+- 技术栈：Next.js App Router、React、TypeScript；Anutrium 主题色为 `#E23456`，DRRR情报屋为 `#f4f500`。
+- 项目配置集中在 `src/lib/projects.ts`。`/` 默认跳转 `/anutrium`；Anutrium 路由依次为 `/anutrium`、监视器分组（`/anutrium/monitor/ga4`，`/anutrium/monitor` 跳转子路由）、`/anutrium/features`、`/anutrium/data`、`/anutrium/about`；DRRR情报屋只有 `/drrr` 和 `/drrr/about`。首页与关于页复用组件，业务内容区未明确要求时保持为空。旧业务地址不保留。
 - 监视器复用网站既有 GA4 汇总接口，浏览器只能通过受保护的后台接口读取；不复制服务账号凭证、不伪造报表数据。
 - 管理员账号固定为 `admin`。不得在源码、测试、文档或提交中写入真实密码与会话密钥；本地配置使用忽略提交的 `.env.local`。
 
@@ -18,7 +18,7 @@
 
 ## 视觉与实现
 
-- 整体参考 https://anulucas-blog.pages.dev/ 的透明玻璃层级：纯色背景、半透明面板、磨砂效果、细边框及层间留白；背景不使用图片。保留 `#E23456` 作为强调色。
+- 整体参考 https://anulucas-blog.pages.dev/ 的透明玻璃层级：纯色背景、半透明面板、磨砂效果、细边框及层间留白；背景不使用图片。强调色跟随当前项目。
 - 优先复用已有组件与颜色、间距、字体变量；禁止装饰性渐变、过度动效和多层阴影。
 - 页面布局兼容桌面与移动端，支持键盘操作与减少动态效果偏好。
 - 后台框架固定在视口内；面包屑与路由标题下方带分割线，仅 `.route-scroll` 正文区域滚动。侧栏和内容卡不得由长内容撑出视口，不通过修改 body 滚动样式实现。

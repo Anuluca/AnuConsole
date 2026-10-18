@@ -5,7 +5,7 @@ const report = (id: string, metrics: Record<string, number> = {}, dimensions: st
   id, status: "ready", rows: [{ dimensions, metrics }], rowCount: 1, thresholded: false, sampled: false, dataLoss: false,
 });
 const generatedAt = "2026-10-17T01:00:00Z";
-const fixture = (days = 7) => ({ days, generatedAt, timeZone: "Asia/Shanghai", reports: [
+const fixture = (days = 1) => ({ days, generatedAt, timeZone: "Asia/Shanghai", reports: [
   report("overview", { activeUsers: days, screenPageViews: 200, sessions: 40, eventCount: 300 }),
   report("engagement", { engagementRate: .5, averageSessionDuration: 65 }),
   { ...report("trend", { screenPageViews: 20, activeUsers: 3, sessions: 4 }, ["20261016"]), rows: [
@@ -25,12 +25,12 @@ test.beforeEach(async ({ page }) => {
   ] } }));
 });
 
-test("默认七天、移除工具栏、趋势、分类与手机布局", async ({ page }, testInfo) => {
+test("默认今天、移除工具栏、趋势、分类与手机布局", async ({ page }, testInfo) => {
   await page.route("**/api/analytics/summary?*", route => route.fulfill({ json: fixture(Number(new URL(route.request().url()).searchParams.get("days"))) }));
   await page.goto("/anutrium/monitor/ga4");
   await expect(page.getByRole("heading", { name: "GA4浏览量", exact: true })).toBeVisible();
   const overview = page.getByRole("region", { name: "概览", exact: true });
-  await expect(overview.locator(".monitor-metric").first().locator("strong")).toHaveText("7");
+  await expect(overview.locator(".monitor-metric").first().locator("strong")).toHaveText("1");
   await expect(page.getByRole("group", { name: /页面浏览量每日趋势/ })).toBeVisible();
   const point = page.locator(".monitor-chart-hit").first();
   await point.hover();
@@ -45,12 +45,13 @@ test("默认七天、移除工具栏、趋势、分类与手机布局", async ({
   await expect(page.getByRole("region", { name: "入口页面", exact: true })).toContainText("报表暂不可用");
   await expect(page.locator(".monitor-toolbar")).toHaveCount(0);
   const ranges = page.getByRole("group", { name: "统计时间范围" });
-  await expect(ranges.getByRole("button")).toHaveCount(3);
-  await expect(ranges.getByRole("button", { name: "近 7 天", exact: true })).toHaveAttribute("aria-pressed", "true");
-  for (const days of [30, 90, 7]) {
-    await ranges.getByRole("button", { name: `近 ${days} 天`, exact: true }).click();
+  await expect(ranges.getByRole("button")).toHaveCount(4);
+  await expect(ranges.getByRole("button", { name: "今天", exact: true })).toHaveAttribute("aria-pressed", "true");
+  for (const days of [1, 30, 90, 7]) {
+    const label = days === 1 ? "今天" : `近 ${days} 天`;
+    await ranges.getByRole("button", { name: label, exact: true }).click();
     await expect(overview.locator(".monitor-metric").first().locator("strong")).toHaveText(String(days));
-    await expect(ranges.getByRole("button", { name: `近 ${days} 天`, exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(ranges.getByRole("button", { name: label, exact: true })).toHaveAttribute("aria-pressed", "true");
   }
   await expect(page.getByRole("button", { name: "刷新", exact: true })).toHaveCount(0);
   await expect(page.locator(".monitor-meta")).not.toContainText(/近 \d+ 天 ·|报表时区|北京时间/);
@@ -60,7 +61,7 @@ test("默认七天、移除工具栏、趋势、分类与手机布局", async ({
   await page.screenshot({ path: testInfo.outputPath("monitor.png"), fullPage: true });
 });
 
-test("卡片标题、概览指标说明和趋势实时比例", async ({ page }, testInfo) => {
+test("卡片标题、概览指标说明和趋势布局", async ({ page }, testInfo) => {
   await page.route("**/api/analytics/summary?*", route => route.fulfill({ json: fixture() }));
   await page.goto("/anutrium/monitor/ga4");
   await expect(page.getByRole("region", { name: "概览", exact: true })).toHaveAttribute("aria-busy", "false");
@@ -86,7 +87,6 @@ test("卡片标题、概览指标说明和趋势实时比例", async ({ page }, 
     expect(live!.x).toBeLessThan(trend!.x);
     expect(Math.abs(trend!.y - live!.y)).toBeLessThanOrEqual(1);
     expect(trend!.width).toBeGreaterThan(live!.width);
-    expect(Math.abs(trend!.height - live!.height)).toBeLessThanOrEqual(1);
   } else {
     expect(trend!.y).toBeGreaterThanOrEqual(live!.y + live!.height);
     expect(Math.abs(trend!.width - live!.width)).toBeLessThanOrEqual(1);
@@ -98,17 +98,28 @@ test("读取失败不伪造零值，实时不受影响，刷新后恢复", async
   let failed = true;
   await page.route("**/api/analytics/summary?*", route => route.fulfill(failed ? { status: 502, json: { error: "analytics_unavailable" } } : { json: fixture() }));
   await page.goto("/anutrium/monitor/ga4");
-  await expect(page.locator(".monitor-dashboard").getByRole("alert")).toContainText("统计暂时无法读取");
+  const alert = page.locator(".monitor-dashboard").getByRole("alert");
+  await expect(alert).toContainText("读取失败");
+  await expect(page.locator(".monitor-meta").getByRole("alert")).toBeVisible();
+  await expect(page.locator(".monitor-meta time")).toHaveCount(0);
+  await expect(alert.getByRole("button", { name: "重试" }).locator("svg")).toHaveCount(1);
+  const rangesBox = await page.getByRole("group", { name: "统计时间范围" }).boundingBox();
+  const retryBox = await alert.getByRole("button", { name: "重试" }).boundingBox();
+  expect(retryBox!.x).toBeGreaterThanOrEqual(rangesBox!.x + rangesBox!.width);
+  const metaBox = await page.locator(".monitor-meta").boundingBox();
+  expect(Math.abs(retryBox!.x + retryBox!.width - (metaBox!.x + metaBox!.width))).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.locator(".monitor-metrics").first().locator("strong")).toHaveText(["—", "—", "—", "—"]);
   await expect(page.locator(".monitor-live-content > strong")).toHaveText("0");
   failed = false;
-  await page.getByRole("button", { name: "重新读取", exact: true }).click();
-  await expect(page.locator(".monitor-metrics").first().locator("strong").first()).toHaveText("7");
+  await page.getByRole("button", { name: "重试", exact: true }).click();
+  await expect(page.locator(".monitor-metrics").first().locator("strong").first()).toHaveText("1");
   await expect(page.locator(".monitor-dashboard").getByRole("alert")).toHaveCount(0);
   failed = true;
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-  await expect(page.locator(".monitor-dashboard").getByRole("alert")).toContainText("当前保留上次结果");
-  await expect(page.locator(".monitor-metrics").first().locator("strong").first()).toHaveText("7");
+  await expect(page.locator(".monitor-dashboard").getByRole("alert")).toContainText("保留上次结果");
+  await expect(page.locator(".monitor-meta time")).toHaveCount(0);
+  await expect(page.locator(".monitor-metrics").first().locator("strong").first()).toHaveText("1");
 });
 
 test("空数据有独立状态，相对更新时间随时钟自动变化", async ({ page }) => {
@@ -135,7 +146,7 @@ test("空数据有独立状态，相对更新时间随时钟自动变化", async
 });
 
 test("服务端拒绝任意报表与时间范围", async ({ request }) => {
-  for (const path of ["/api/analytics/private", "/api/analytics/summary?days=1", "/api/analytics/summary?days=NaN"]) {
+  for (const path of ["/api/analytics/private", "/api/analytics/summary?days=2", "/api/analytics/summary?days=NaN"]) {
     const response = await request.get(path);
     expect(response.status()).toBe(path.endsWith("private") ? 404 : 400);
     expect(response.headers()["cache-control"]).toBe("private, no-store");

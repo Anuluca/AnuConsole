@@ -84,6 +84,8 @@ npm run start
 
 ## 功能调整
 
+密钥配置、备份与丢失后的恢复步骤见 [首页功能开关备忘](docs/home-features-memo.md)。
+
 `/anutrium/features` 的“首页”模块提供“路卡雕像的头疼模式”开关。页面先读取真实状态；读取失败时显示状态未知并禁用开关，重试后恢复。保存期间禁用开关，收到服务端成功结果后更新；保存失败则重新读取确认状态。
 
 浏览器只访问 `/api/features/home`；GET 和 PUT 均执行 `requireAdmin()`，PUT 还检查请求来源、JSON 类型、字段和请求体大小。后台使用服务端密钥代理 Worker 的 `/admin/home-features`，不向浏览器暴露密钥或上游错误详情。所有响应不缓存。

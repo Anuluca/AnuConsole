@@ -1,25 +1,20 @@
 import "server-only";
-import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getIronSession } from "iron-session";
-import { developmentAuthBypass } from "./auth-policy";
+import { developmentAuthBypass } from "./auth-policy.ts";
+import { accountVersion, getAccount, sessionIdentity, validPasswordHash, type UserSession } from "./accounts.ts";
 
 export const SESSION_TTL = 60 * 60 * 8;
-type AdminSession = { username?: "admin"; expiresAt?: number; credentialVersion?: string };
 
 export function authConfigured(): boolean {
-  return /^scrypt:[a-f0-9]{32}:[a-f0-9]{128}$/.test(process.env.ADMIN_PASSWORD_HASH ?? "") &&
+  return validPasswordHash(process.env.ADMIN_PASSWORD_HASH) &&
     (process.env.SESSION_SECRET?.length ?? 0) >= 32;
-}
-
-function credentialVersion(): string {
-  return createHash("sha256").update(process.env.ADMIN_PASSWORD_HASH ?? "").digest("hex");
 }
 
 export async function getSession() {
   if (!authConfigured()) throw new Error("管理员配置缺失，请运行 npm run setup:admin");
-  return getIronSession<AdminSession>(await cookies(), {
+  return getIronSession<UserSession>(await cookies(), {
     password: process.env.SESSION_SECRET!,
     cookieName: "anuconsole_session",
     ttl: SESSION_TTL,
@@ -34,22 +29,39 @@ export async function getSession() {
 }
 
 export async function isAuthenticated(): Promise<boolean> {
-  if (!authConfigured()) return false;
-  const session = await getSession();
-  return session.username === "admin" && (session.expiresAt ?? 0) > Date.now() &&
-    session.credentialVersion === credentialVersion();
+  return (await getAuthenticatedUser()) !== null;
+}
+
+export async function getAuthenticatedUser() {
+  if (!authConfigured()) return null;
+  return sessionIdentity(await getSession());
+}
+
+export async function requireUser() {
+  const user = await getAuthenticatedUser();
+  if (user) return user;
+  // 开发环境的匿名免登录保留，但已登录的只读账号仍受权限限制。
+  if (developmentAuthBypass()) return { username: "admin", role: "admin" } as const;
+  redirect("/login");
+}
+
+export class ForbiddenError extends Error {
+  constructor() { super("forbidden"); }
 }
 
 export async function requireAdmin() {
-  if (developmentAuthBypass()) return;
-  if (!(await isAuthenticated())) redirect("/login");
+  const user = await requireUser();
+  if (user.role !== "admin") throw new ForbiddenError();
+  return user;
 }
 
-export async function createAdminSession() {
+export async function createUserSession(username: "admin" | "viewer") {
+  const account = getAccount(username);
+  if (!account) throw new Error("账号未配置");
   const session = await getSession();
-  session.username = "admin";
+  session.username = account.username;
   session.expiresAt = Date.now() + SESSION_TTL * 1000;
   // 修改密码后旧会话即失效，无需等待原 Cookie 到期。
-  session.credentialVersion = credentialVersion();
+  session.credentialVersion = accountVersion(account);
   await session.save();
 }

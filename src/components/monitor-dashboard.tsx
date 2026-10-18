@@ -9,6 +9,7 @@ import {
 import { useAnalytics } from "./use-analytics";
 import { RelativeTime } from "./relative-time";
 import { AnalyticsLinks } from "./analytics-links";
+import { LoadingIndicator } from "./loading-indicator";
 
 function RetryButton({ onClick }: { onClick: () => void }) {
   return <button className="monitor-retry" type="button" onClick={onClick}>
@@ -36,7 +37,7 @@ function ReportTable({ id, report, loading, className = "" }: { id: string; repo
   const columns = Array.from(new Set(report?.rows.flatMap(row => Object.keys(row.metrics)) ?? []));
   return <section className={`monitor-card monitor-report ${className}`} aria-label={definition.title}>
     <header><h3>{definition.title}</h3>{!!report?.rows.length && <span>{report.rowCount > report.rows.length ? `前 ${report.rows.length} 项 / 共 ${report.rowCount} 项` : `${report.rows.length} 项`}</span>}</header>
-    {!report ? <p className="monitor-empty">{loading ? "正在读取…" : "报表暂不可用"}</p>
+    {!report ? loading ? <LoadingIndicator label={`正在读取${definition.title}`} /> : <p className="monitor-empty">报表暂不可用</p>
       : report.status === "unavailable" ? <p className="monitor-empty">报表暂不可用</p>
       : !report.rows.length ? <p className="monitor-empty">暂无数据</p>
       : <div className="monitor-table-scroll" role="region" aria-label={`${definition.title}表格`} tabIndex={0}><table>
@@ -60,7 +61,7 @@ function Trend({ report, loading }: { report?: AnalyticsReport; loading: boolean
     <header><h2>每日趋势</h2><div className="monitor-options" role="group" aria-label="趋势指标">
       {["screenPageViews", "activeUsers", "sessions"].map(key => <button key={key} type="button" aria-pressed={metric === key} onClick={() => setMetric(key)}>{METRICS[key]}</button>)}
     </div></header>
-    {!report ? <p className="monitor-empty monitor-chart-empty">{loading ? "正在读取趋势…" : "趋势暂不可用"}</p>
+    {!report ? loading ? <LoadingIndicator className="monitor-chart-empty" label="正在读取趋势" /> : <p className="monitor-empty monitor-chart-empty">趋势暂不可用</p>
       : report.status === "unavailable" ? <p className="monitor-empty monitor-chart-empty">趋势暂不可用</p>
       : !rows.length ? <p className="monitor-empty monitor-chart-empty">所选时间范围暂无趋势数据</p>
       : <>
@@ -127,7 +128,7 @@ export function MonitorDashboard() {
       {summary.error ? <div className="monitor-summary-error" role="alert" title={`${summary.error}${data ? " 当前保留上次结果。" : ""}`}>
         <span>{summary.error.includes("尚未配置") ? "尚未配置" : "读取失败"}{data && <span className="monitor-stale-note">（保留上次结果）</span>}</span>
         <RetryButton onClick={() => setRefresh(value => value + 1)} />
-      </div> : <span>{summary.loading ? "正在读取统计…" : <>更新于 <RelativeTime value={data?.generatedAt} /></>}</span>}
+      </div> : summary.loading ? <LoadingIndicator compact label="正在读取统计" /> : <span>更新于 <RelativeTime value={data?.generatedAt} /></span>}
     </div>
     {!!data?.reports.length && data.reports.every(report => report.status === "unavailable") && <p className="monitor-note">所有报表暂不可用，请稍后重试。</p>}
     <div ref={activityRow} className={`monitor-activity-row${moreOpen ? " monitor-activity-expanded" : ""}`} style={{ minHeight: moreOpen ? expandedHeight : undefined }}>

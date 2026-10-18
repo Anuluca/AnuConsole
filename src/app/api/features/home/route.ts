@@ -1,5 +1,5 @@
-import { requireAdmin } from "@/lib/auth";
-import { isHomeFeatures } from "@/lib/home-features";
+import { ForbiddenError, requireAdmin, requireUser } from "../../../../lib/auth.ts";
+import { isHomeFeatures } from "../../../../lib/home-features.ts";
 
 const headers = { "Cache-Control": "private, no-store" };
 const respond = (body: unknown, status = 200) => Response.json(body, { status, headers });
@@ -21,19 +21,24 @@ async function upstream(update?: { lucarioHeadache: boolean }) {
     if (!response.ok) return respond({ error: "home_features_unavailable" }, 502);
     const config: unknown = await response.json();
     if (!isHomeFeatures(config)) return respond({ error: "home_features_unavailable" }, 502);
-    return respond({ lucarioHeadache: config.lucarioHeadache, updatedAt: config.updatedAt });
+    return respond({ lucarioHeadache: config.lucarioHeadache, headacheCount: config.headacheCount, updatedAt: config.updatedAt });
   } catch {
     return respond({ error: "home_features_unavailable" }, 502);
   }
 }
 
 export async function GET() {
-  await requireAdmin();
+  await requireUser();
   return upstream();
 }
 
 export async function PUT(request: Request) {
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (error) {
+    if (error instanceof ForbiddenError) return respond({ error: "forbidden" }, 403);
+    throw error;
+  }
   // 写请求必须来自后台同源页面，开发免登录规则也不绕过来源校验。
   const origin = request.headers.get("Origin");
   let sameOrigin = false;

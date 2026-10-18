@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getProject } from "@/lib/projects";
 
 export const metadata = { title: "关于" };
@@ -7,8 +7,8 @@ export const metadata = { title: "关于" };
 const githubUrl = "https://github.com/Anuluca/AnuConsole";
 
 export default async function AboutPage({ params }: { params: Promise<{ project: string }> }) {
-  // 关于页同样是业务页面，服务端先验证管理员身份，再读取项目内容。
-  await requireAdmin();
+  // 关于页同样先验证登录身份，再读取项目内容。
+  await requireUser();
   const project = getProject((await params).project);
   if (!project) notFound();
 

@@ -4,9 +4,10 @@
 
 - 本项目是独立的 Next.js 多项目管理后台，当前维护 Anutrium（anuluca.com）与 DRRR情报屋。
 - 技术栈：Next.js App Router、React、TypeScript；Anutrium 主题色为 `#E23456`，DRRR情报屋为 `#f4f500`。
-- 项目配置集中在 `src/lib/projects.ts`。`/` 默认跳转 `/anutrium`；Anutrium 路由依次为 `/anutrium`、监视器分组（`/anutrium/monitor/ga4`，`/anutrium/monitor` 跳转子路由）、`/anutrium/features`、`/anutrium/data`、`/anutrium/about`；DRRR情报屋只有 `/drrr` 和 `/drrr/about`。首页与关于页复用组件，业务内容区未明确要求时保持为空。旧业务地址不保留。
+- 项目配置集中在 `src/lib/projects.ts`。`/` 默认跳转 `/anutrium`；Anutrium 业务路由包括首页、监视器分组（`/anutrium/monitor/ga4`，`/anutrium/monitor` 跳转子路由）、`/anutrium/features`、`/anutrium/data`。所有项目复用首页、网站运维和关于页，并保留各自项目路径；关于页排序最后。业务内容区未明确要求时保持为空。旧业务地址不保留。
+- 所有项目菜单统一显示网站运维，地址为 `/{project}/infrastructure/dns` 与 `/{project}/infrastructure/netlify`，新增项目自动获得运维菜单。配置步骤见 `docs/infrastructure.md`。Cloudflare 固定管理 `anuluca.com`；Netlify 可用 `NETLIFY_SITE_IDS` 限制项目。环境变量明文及平台凭据不返回浏览器；自动化测试必须模拟写操作，不改真实 DNS、不触发真实构建。
 - 监视器复用网站既有 GA4 汇总接口，浏览器只能通过受保护的后台接口读取；不复制服务账号凭证、不伪造报表数据。
-- 管理员账号固定为 `admin`。不得在源码、测试、文档或提交中写入真实密码与会话密钥；本地配置使用忽略提交的 `.env.local`。
+- 管理员账号固定为 `admin`；可选只读账号为 `viewer`，通过 `VIEWER_PASSWORD_HASH` 启用，只能查看页面和数据。不得在源码、测试、文档或提交中写入真实密码与会话密钥；本地配置使用忽略提交的 `.env.local`。
 
 ## 本地开发服务
 
@@ -38,5 +39,5 @@
 - 登录标题为 `DRIVEN BY CONSOLE.`，使用线上 R2 的 Anton 字体与 `#E23456`；其余界面继续使用 Alibaba PuHuiTi。
 - 后台充分使用视口宽度；登录页桌面最大宽度 1360px，表单最大宽度 400px，登录按钮保持紧凑并右对齐。版权文字均位于对应页面右下角。
 - 主题默认按浏览器本地时间自动切换：07:00–19:00 为浅色，其余时间为深色；允许手动选择并记忆偏好。
-- 所有业务页面、后续数据访问和写入操作都必须经过服务端 `requireAdmin()`；仅 `NODE_ENV=development` 允许免登录，生产、测试及未指定环境一律保留身份验证。
+- 业务页面和读取接口必须经过服务端 `requireUser()`；所有业务写入必须执行 `requireAdmin()`，只读账号直接调用写接口也必须返回 403。角色从服务端账号配置推导，不信任客户端声明。仅 `NODE_ENV=development` 允许匿名免登录，已登录的只读账号仍受权限限制；生产、测试及未指定环境一律保留身份验证。
 - 修改身份认证时运行 `npm test`、`npm run typecheck` 与 `npm run build`；服务已运行且有测试凭据时再运行 `npm run test:e2e`。

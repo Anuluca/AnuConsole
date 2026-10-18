@@ -9,6 +9,8 @@
     "start": "next start --hostname 127.0.0.1 --port 3002",
     "typecheck": "tsc --noEmit",
     "setup:admin": "node scripts/setup-admin.mjs",
+    "setup:viewer": "node scripts/setup-viewer.mjs",
+    "check:infrastructure": "node scripts/check-infrastructure.mjs",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:e2e": "playwright test"
   },

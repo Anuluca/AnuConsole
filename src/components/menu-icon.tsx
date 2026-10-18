@@ -6,6 +6,9 @@ export function MenuIcon({ route }: { route: RouteKey }) {
       : route === "monitor" ? <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4M6 11h3l2-4 2 7 2-3h3" /></>
       : route === "ga4" ? <><path d="M4 3v17h17M8 15v-4m5 4V7m5 8V4" /></>
       : route === "features" ? <><path d="M4 7h8m6 0h2M4 17h2m6 0h8" /><circle cx="15" cy="7" r="3" /><circle cx="9" cy="17" r="3" /></>
+      : route === "dns" ? <><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="4" ry="9" /><path d="M3 12h18M5 6h14M5 18h14" /></>
+      : route === "netlify" ? <><path d="M7 17H5a3 3 0 0 1-.5-6A6 6 0 0 1 16 8a4.5 4.5 0 0 1 3 8.5M12 21V11m-4 4 4-4 4 4" /></>
+      : route === "infrastructure" ? <><rect x="3" y="3" width="18" height="7" /><rect x="3" y="14" width="18" height="7" /><path d="M7 6.5h1M7 17.5h1M12 10v4" /></>
       : route === "about" ? <><circle cx="12" cy="12" r="9" /><path d="M12 11v6m0-10v1" /></>
       : <><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></>}
   </svg>;

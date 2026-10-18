@@ -1,10 +1,10 @@
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { ANALYTICS_RANGES, isAnalyticsPayload } from "@/lib/analytics";
 
 const headers = { "Cache-Control": "private, no-store" };
 
 export async function GET(request: Request, context: { params: Promise<{ kind: string }> }) {
-  await requireAdmin();
+  await requireUser();
   const { kind } = await context.params;
   if (kind !== "summary" && kind !== "realtime") return Response.json({ error: "invalid_report" }, { status: 404, headers });
   const rawDays = new URL(request.url).searchParams.get("days") ?? "30";

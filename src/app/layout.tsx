@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TypekitFonts } from "@/components/typekit-fonts";
 import { PageTransition } from "@/components/page-transition";
+import { RouteProgressProvider } from "@/components/route-progress";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./brand-fonts.css";
 import "./globals.css";
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="zh-CN" suppressHydrationWarning><head><link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" /><link rel="preconnect" href="https://assets.anuluca.com" crossOrigin="anonymous" /><link rel="preload" href="https://assets.anuluca.com/fonts/Anton.woff2?v=20260913-anuconsole-20261017" as="font" type="font/woff2" crossOrigin="anonymous" /><link rel="preload" href="https://assets.anuluca.com/fonts/unbounded/unboundedsans-latin.b28252ecd183.woff2?v=3ee43649a8ae-anuconsole-20261017" as="font" type="font/woff2" crossOrigin="anonymous" /><script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head><body><TypekitFonts /><ThemeProvider><PageTransition>{children}</PageTransition></ThemeProvider></body></html>;
+  return <html lang="zh-CN" suppressHydrationWarning><head><link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" /><link rel="preconnect" href="https://assets.anuluca.com" crossOrigin="anonymous" /><link rel="preload" href="https://assets.anuluca.com/fonts/Anton.woff2?v=20260913-anuconsole-20261017" as="font" type="font/woff2" crossOrigin="anonymous" /><link rel="preload" href="https://assets.anuluca.com/fonts/unbounded/unboundedsans-latin.b28252ecd183.woff2?v=3ee43649a8ae-anuconsole-20261017" as="font" type="font/woff2" crossOrigin="anonymous" /><script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head><body><TypekitFonts /><ThemeProvider><RouteProgressProvider><PageTransition>{children}</PageTransition></RouteProgressProvider></ThemeProvider></body></html>;
 }

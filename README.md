@@ -1,5 +1,7 @@
 # AnuConsole
 
+网站运维支持 Cloudflare DNS 和 Netlify 项目、部署、环境变量及项目设置，入口和凭据配置见 [网站运维文档](docs/infrastructure.md)。
+
 Anutrium（[anuluca.com](https://anuluca.com)）与 DRRR情报屋的管理后台。Next.js App Router、React、TypeScript；项目强调色分别为 `#E23456` 与 `#f4f500`。
 
 ## 本地运行
@@ -9,18 +11,18 @@ npm install
 npm run dev
 ```
 
-打开 [http://127.0.0.1:3002](http://127.0.0.1:3002)。账号固定为 `admin`，密码通过交互式命令设置。当前机器已配置 `.env.local` 时跳过初始化。开发服务默认由用户启动并保持运行，助手仅复用该服务。
+打开 [http://127.0.0.1:3002](http://127.0.0.1:3002)。管理员账号为 `admin`，可选只读账号为 `viewer`，密码通过交互式命令设置。当前机器已配置 `.env.local` 时跳过管理员初始化。开发服务默认由用户启动并保持运行，助手仅复用该服务。
 
 `npm run dev` 的开发环境可直接访问业务页面，无需登录或配置管理员。生产环境 `npm run build` / `npm run start` 仍需配置管理员并登录。开发环境保留 `/login` 供预览登录界面。
 
 | 路由 | 页面 | 访问权限 |
 | --- | --- | --- |
-| `/login` | 管理员登录 | 公开，已登录时跳转首页 |
-| `/` | 跳转到 Anutrium 首页 | 开发免登录，生产 admin |
-| `/anutrium`、`/anutrium/about` | Anutrium 首页、关于 | 开发免登录，生产 admin |
-| `/anutrium/monitor/ga4` | Anutrium 监视器 → GA4浏览量 | 开发免登录，生产 admin |
-| `/anutrium/features`、`/anutrium/data` | Anutrium 功能调整、数据维护 | 开发免登录，生产 admin |
-| `/drrr`、`/drrr/about` | DRRR情报屋首页、关于 | 开发免登录，生产 admin |
+| `/login` | 账号登录 | 公开，已登录时跳转首页 |
+| `/` | 跳转到 Anutrium 首页 | 开发免登录，生产 admin / viewer |
+| `/anutrium`、`/anutrium/about` | Anutrium 首页、关于 | 开发免登录，生产 admin / viewer |
+| `/anutrium/monitor/ga4` | Anutrium 监视器 → GA4浏览量 | 开发免登录，生产 admin / viewer |
+| `/anutrium/features`、`/anutrium/data` | Anutrium 功能调整、数据维护 | admin 可修改，viewer 只读 |
+| `/drrr`、`/drrr/about` | DRRR情报屋首页、关于 | 开发免登录，生产 admin / viewer |
 
 首页、功能调整和数据维护保留空内容区；关于页介绍当前项目与控制台职能，并链接到 [AnuConsole GitHub 仓库](https://github.com/Anuluca/AnuConsole)。监视器接入网站既有 GA4 聚合报表。项目菜单与颜色在 `src/lib/projects.ts` 配置，页面 URL 包含项目名；旧业务地址不保留。
 
@@ -32,10 +34,18 @@ npm run dev
 
 - 密码使用随机盐与 scrypt 保存为哈希，不向客户端暴露；环境文件已被 `.gitignore` 排除。
 - iron-session 加密会话保存在 `HttpOnly`、`SameSite=Strict` Cookie 中，有效期 8 小时；生产环境启用 `Secure`。
-- 布局及每个业务页面分别执行服务端授权。后续数据查询、接口及 Server Actions 必须调用 `requireAdmin()`。
+- 布局、业务页面和读取接口调用 `requireUser()`；业务写入必须调用 `requireAdmin()`。viewer 可以查看统计、页面和开关状态，但开关禁用，直接写接口返回 403；角色始终由服务端账号配置确定。
 - 登录、退出使用 Next.js Server Actions，保留框架自带的来源检查；不开放跨源登录接口。
 - 每个服务进程一分钟最多接受 10 次登录尝试。多实例部署前应使用共享限流存储或在反向代理配置限流。
 - 修改密码执行 `npm run setup:admin -- --force`，然后重启服务；会同时轮换会话密钥，使已有会话失效。退出会清除当前浏览器 Cookie。
+
+### 只读账号 viewer
+
+在项目根目录运行 `npm run setup:viewer`，按终端提示输入并确认独立密码。脚本仅向 `.env.local` 添加 `VIEWER_PASSWORD_HASH`，不会覆盖管理员、会话密钥和其他配置，不显示明文密码。未配置该哈希时 viewer 不能登录。
+
+Netlify 上线时，再将 `.env.local` 中的 `VIEWER_PASSWORD_HASH` 同步到该项目的私密环境变量，勾选 Contains secret values，作用域包含 Functions，然后重新部署。登录账号填写 `viewer`，密码填写刚才设置的明文密码，不是哈希。
+
+重置只读密码运行 `npm run setup:viewer -- --force`，只会使旧 viewer 会话失效；移除 `VIEWER_PASSWORD_HASH` 则禁用该账号。管理员密码重置仍会轮换共享会话密钥，使所有已有会话失效；脚本保留只读账号和业务密钥。开发环境匿名免登录保留，但已登录的 viewer 不会因此获得写权限。
 
 ## 检查
 
@@ -55,6 +65,22 @@ unset E2E_ADMIN_PASSWORD
 浏览器测试默认覆盖开发环境免登录、路由切换与几何稳定性、主题切换和指定文案删除；`E2E_AUTH_MODE=production` 额外校验生产环境登录、未登录拦截、会话保持与退出。
 
 ## 部署
+
+### Netlify 自动部署
+
+根目录 `netlify.toml` 已配置 Node.js 24、`npm test && npm run build` 和 `.next` 发布目录。关联 Git 仓库并选择生产分支后，Netlify 自动安装依赖，推送到该分支时执行测试和构建；Next.js 适配器自动处理服务端页面、API 与 Server Actions，无需运行 `npm run start` 或配置 3002 端口。参见 [Netlify 的 Next.js 部署说明](https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/overview/)。
+
+首次上线需要在 Netlify 完成以下设置：
+
+1. 将本项目仓库关联到独立的 Netlify 项目，根目录作为构建目录，使用仓库内的 `netlify.toml`。
+2. 在项目的私密环境变量中配置 `ADMIN_PASSWORD_HASH`、`SESSION_SECRET` 和 `HOME_FEATURES_TOKEN`，作用域必须包含 **Functions**。前两项可从本机 `.env.local` 安全迁移，`HOME_FEATURES_TOKEN` 必须与 Anutrium Worker Secret 一致；不将 `.env.local` 上传或提交到 Git。
+3. 如需覆盖默认接口地址，在同一处配置 `GA4_REPORTS_URL` 或 `HOME_FEATURES_URL`，同样包含 Functions 作用域。`netlify.toml` 的构建环境变量不能替代函数运行时密钥。
+4. 在域名管理中添加 `console.anuluca.com` 并设为生产主域名，按 Netlify 提供的信息配置 DNS，确认 HTTPS 证书生效。配置文件本身不会绑定域名。
+5. 发布后访问 `https://console.anuluca.com`，确认未登录访问业务页面会进入登录页，再检查统计读取与功能开关。修改运行时环境变量后重新部署。
+
+生产模式保持管理员认证；Netlify 部署不会启用本地开发免登录规则。已有的每进程登录限流不能在多个函数实例间共享，线上可在入口配置统一限流。
+
+### 自行部署 Node.js 服务
 
 需要 Node.js 24+ 服务端运行环境，不能作为纯静态站点导出。通过部署平台的私密环境变量配置 `ADMIN_PASSWORD_HASH` 和至少 32 字符的随机 `SESSION_SECRET`，不要将 `.env.local` 提交到仓库。
 
@@ -86,9 +112,9 @@ npm run start
 
 密钥配置、备份与丢失后的恢复步骤见 [首页功能开关备忘](docs/home-features-memo.md)。
 
-`/anutrium/features` 的“首页”模块提供“路卡雕像的头疼模式”开关。页面先读取真实状态；读取失败时显示状态未知并禁用开关，重试后恢复。保存期间禁用开关，收到服务端成功结果后更新；保存失败则重新读取确认状态。
+`/anutrium/features` 的“首页”模块提供“路卡雕像的头疼模式”开关。页面先读取真实状态；读取失败时显示状态未知并禁用开关，重试后恢复。保存期间禁用开关，收到服务端成功结果后更新；保存失败则重新读取确认状态。页面同时显示服务端返回的累计头疼次数；初始历史基数为 10，仅从关闭切换为开启时新增一次记录，关闭和重复保存不计数。记录保存在 Anutrium Worker 既有 R2 配置中。
 
-浏览器只访问 `/api/features/home`；GET 和 PUT 均执行 `requireAdmin()`，PUT 还检查请求来源、JSON 类型、字段和请求体大小。后台使用服务端密钥代理 Worker 的 `/admin/home-features`，不向浏览器暴露密钥或上游错误详情。所有响应不缓存。
+浏览器只访问 `/api/features/home`；GET 执行 `requireUser()`，PUT 执行 `requireAdmin()`，PUT 还检查请求来源、JSON 类型、字段和请求体大小。后台使用服务端密钥代理 Worker 的 `/admin/home-features`，不向浏览器暴露密钥或上游错误详情。所有响应不缓存。
 
 上线前在 AnuConsole 的私密服务端环境和 Anutrium Worker Secret 中设置同一个安全随机 `HOME_FEATURES_TOKEN`（至少 32 字符）。上游地址默认 `https://steam-api.anuluca.com/admin/home-features`，可通过服务端 `HOME_FEATURES_URL` 覆盖。不要将密钥加入 `NEXT_PUBLIC_` 变量或提交到 Git。未配置时页面会提示“功能开关尚未配置”。
 

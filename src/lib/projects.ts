@@ -1,5 +1,5 @@
 export type ProjectId = "anutrium" | "drrr";
-export type RouteKey = "home" | "monitor" | "ga4" | "features" | "data" | "about";
+export type RouteKey = "home" | "monitor" | "ga4" | "features" | "data" | "infrastructure" | "dns" | "netlify" | "about";
 
 export type RouteItem = {
   key: RouteKey;
@@ -25,7 +25,7 @@ const shared = (id: ProjectId, key: "home" | "about", label: string): RouteItem 
   key, label, href: key === "home" ? `/${id}` : `/${id}/about`
 });
 
-export const projects: readonly Project[] = [
+const projectDefinitions: readonly Project[] = [
   {
     id: "anutrium", title: "Anutrium", accent: "#E23456", onAccent: "#fff", logoSrc: "/anutrium-logo.png", siteUrl: "https://anuluca.com",
     routes: [
@@ -44,6 +44,19 @@ export const projects: readonly Project[] = [
     routes: [shared("drrr", "home", "首页"), shared("drrr", "about", "关于")]
   }
 ];
+
+// 运维是全项目共用能力，统一插入关于页之前；后续新增项目也自动获得自己的运维地址。
+export const projects: readonly Project[] = projectDefinitions.map(project => {
+  const routes = [...project.routes];
+  const aboutIndex = routes.findIndex(route => route.key === "about");
+  routes.splice(aboutIndex < 0 ? routes.length : aboutIndex, 0, {
+    key: "infrastructure", label: "网站运维", href: `/${project.id}/infrastructure`, children: [
+      { key: "dns", label: "域名解析", href: `/${project.id}/infrastructure/dns` },
+      { key: "netlify", label: "部署管理", href: `/${project.id}/infrastructure/netlify` }
+    ]
+  });
+  return { ...project, routes };
+});
 
 export function getProject(id: string | undefined): Project | undefined {
   return projects.find(project => project.id === id);

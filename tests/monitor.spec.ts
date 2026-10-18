@@ -129,7 +129,7 @@ test("空数据有独立状态，相对更新时间随时钟自动变化", async
     return route.fulfill({ json: { ...json, reports: json.reports.map(report => ({ ...report, rows: [], rowCount: 0 })) } });
   });
   await page.goto("/anutrium/monitor/ga4");
-  await expect(page.getByRole("status")).toHaveText("已链接GA4");
+  await expect(page.locator(".route-header").getByRole("status")).toHaveText("已链接GA4");
   await expect(page.locator(".route-header .monitor-connection")).toHaveCSS("background-color", "rgb(25, 135, 84)");
   await expect(page.locator(".monitor-dashboard .monitor-connection")).toHaveCount(0);
   const headingBox = await page.locator(".page-heading h1").boundingBox();

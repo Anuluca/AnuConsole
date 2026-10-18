@@ -47,7 +47,7 @@ test("自定义主题下拉、键盘操作、自动时间与偏好保持", async
   await expect(page.locator(".brand-wordmark")).toHaveCSS("font-family", /UnboundedSans/);
   await expect(page.locator(".brand-wordmark > span")).toHaveCSS("font-family", /UnboundedSans/);
   await expect(page.locator(".login-title")).toHaveCSS("font-weight", "900");
-  await expect(page.getByLabel("管理员账号")).toHaveCSS("font-weight", "900");
+  await expect(page.getByLabel("登录账号")).toHaveCSS("font-weight", "900");
   await expect(page.locator(".login-footer span")).toHaveCSS("font-weight", "400");
   await expect(page.locator(".login-footer")).toHaveCSS("font-size", testInfo.project.name === "mobile" ? "11px" : "12px");
   const buttonBox = await page.getByRole("button", { name: "登录", exact: true }).boundingBox();
@@ -55,7 +55,7 @@ test("自定义主题下拉、键盘操作、自动时间与偏好保持", async
   expect(buttonBox!.width).toBeLessThan(formBox!.width * .8);
   expect(Math.abs(buttonBox!.x + buttonBox!.width - formBox!.x - formBox!.width)).toBeLessThanOrEqual(1);
   await expect(page.locator("body")).not.toContainText(/Your site|Your system|CONTROL CENTER|FOR ANUTRIUM|WORKSPACE|ADMINISTRATION|ADMIN ACCESS|X: 0234|Y: 0056|01 — 03|登录 AnuConsole|USERNAME|PASSWORD|仅限授权管理员访问|登录控制台|\{ ANUCONSOLE \}/);
-  await expect(page.getByLabel("管理员账号", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("登录账号", { exact: true })).toBeVisible();
   await expect(page.getByLabel("登录密码", { exact: true })).toBeVisible();
   await expect(page.locator(".login-page a[href='https://anuluca.com']")).toHaveCount(0);
   await expect(page.getByRole("heading")).toHaveText("DRIVEN BY CONSOLE.");

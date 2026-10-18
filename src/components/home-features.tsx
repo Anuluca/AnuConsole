@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { isHomeFeatures, type HomeFeatures } from "@/lib/home-features";
 import { FeatureSwitch } from "./feature-switch";
 import { RelatedLinks } from "./related-links";
+import { LoadingIndicator } from "./loading-indicator";
 
 const relatedLinks = [
   { label: "Anutrium 首页", href: "https://anuluca.com/" },
@@ -11,13 +12,14 @@ const relatedLinks = [
   { label: "Netlify 控制台", href: "https://app.netlify.com/projects/anutrium/overview" },
 ];
 
-export function HomeFeaturesPanel() {
+export function HomeFeaturesPanel({ canEdit }: { canEdit: boolean }) {
   const [config, setConfig] = useState<HomeFeatures | null>(null);
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
   const request = useRef<AbortController | null>(null);
 
   async function readOrSave(update?: boolean) {
+    if (update !== undefined && !canEdit) return;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
@@ -59,16 +61,19 @@ export function HomeFeaturesPanel() {
     <section className="feature-module" aria-labelledby="home-features-title">
       <header><h2 id="home-features-title">首页</h2></header>
       <div className="feature-row" aria-busy={pending}>
+        {pending && !config ? <LoadingIndicator label="正在读取功能状态" /> : <>
         <div className="feature-description">
           <h3>路卡雕像的头疼模式</h3>
-          <p id="lucario-headache-description">保存后刷新生效，读取失败时使用普通模式。</p>
+          <p id="lucario-headache-description">每次从关闭切换为开启记录一次，保存后刷新首页生效。</p>
+          {config && <p>累计头疼 {config.headacheCount} 次</p>}
         </div>
         {error ? <div className="feature-error" role="alert"><span>{error}</span><button type="button" className="monitor-retry" onClick={() => void readOrSave()}>重试</button></div> : <div className="feature-control">
-          <span role="status">{pending ? config ? "保存中…" : "读取中…" : config ? config.lucarioHeadache ? "已开启" : "已关闭" : "状态未知"}</span>
-          <FeatureSwitch checked={config?.lucarioHeadache ?? false} disabled={pending || !config}
+          <span role="status">{pending ? "保存中…" : config ? config.lucarioHeadache ? "已开启" : "已关闭" : "状态未知"}{!canEdit && " · 只读"}</span>
+          <FeatureSwitch checked={config?.lucarioHeadache ?? false} disabled={pending || !config || !canEdit}
             label="路卡雕像的头疼模式" describedBy="lucario-headache-description"
             onChange={value => void readOrSave(value)} />
         </div>}
+        </>}
       </div>
     </section>
     <RelatedLinks label="功能调整相关链接" links={relatedLinks} />

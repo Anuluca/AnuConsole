@@ -36,7 +36,7 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
   }
 
   await page.goto("/anutrium");
-  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "GA4浏览量", "功能调整", "数据维护", "关于"]);
+  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "GA4浏览量", "功能调整", "数据维护", "域名解析", "部署管理", "关于"]);
 
   for (const route of [
     { label: "首页", title: "首页", path: "/anutrium" },
@@ -79,7 +79,7 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
   await expect(page.locator(".page-heading-cn")).toHaveCount(0);
   await expect(page.locator(".sidebar-domain")).toHaveCount(0);
   await expect(page.locator("nav[aria-label=\"主导航\"]")).not.toContainText(/Overview|Features|Data|01|02|03/);
-  await expect(page.locator(".menu-icon")).toHaveCount(6);
+  await expect(page.locator(".menu-icon")).toHaveCount(9);
   await expect(page.getByRole("navigation", { name: "面包屑" })).toContainText("关于");
   await expect(page.getByRole("region", { name: "关于内容区" })).toContainText("Anutrium 等多个项目的管理后台");
   await expect(page.getByRole("region", { name: "关于内容区" })).not.toContainText(/当前项目|共用能力|项目源码/);

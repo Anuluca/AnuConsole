@@ -8,7 +8,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
   const [state, action, pending] = useActionState(login, { error: "" });
   const [visible, setVisible] = useState(false);
   return <form action={action} className="login-form">
-    <label htmlFor="username">管理员账号</label>
+    <label htmlFor="username">登录账号</label>
     <input id="username" name="username" autoComplete="username" defaultValue="admin" required maxLength={64} spellCheck={false} autoCapitalize="none" />
     <label htmlFor="password">登录密码</label>
     <div className="password-field"><input id="password" name="password" type={visible ? "text" : "password"} placeholder="请输入密码" autoComplete="current-password" required maxLength={256} aria-describedby="login-error" />

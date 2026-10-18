@@ -5,7 +5,7 @@ import { CodeAnimation } from "@/components/code-animation";
 import { LoginForm } from "@/components/login-form";
 import { ThemeSwitch } from "@/components/theme-provider";
 
-export const metadata = { title: "管理员登录" };
+export const metadata = { title: "账号登录" };
 
 export default async function LoginPage() {
   if (await isAuthenticated()) redirect("/");

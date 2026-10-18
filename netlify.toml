@@ -1,0 +1,14 @@
+# 生产域名：https://console.anuluca.com
+# 在 Netlify 控制台绑定主域名及 DNS；此文件不创建站点或修改域名记录。
+[build]
+  command = "npm test && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "24"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Netlify 自动识别 Next.js，并通过适配器部署服务端页面、API 和 Server Actions。
+# 保留 Next.js 自身路由与安全响应头，不添加静态站点的 /* → /index.html 回退。
+# ADMIN_PASSWORD_HASH、SESSION_SECRET、HOME_FEATURES_TOKEN 及可选的 VIEWER_PASSWORD_HASH 在 Netlify 私密环境变量中配置，
+# 必须包含 Functions 作用域；不要在此文件或仓库中填写真实值。

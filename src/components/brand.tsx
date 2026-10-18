@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ProgressLink as Link } from "./route-progress";
 
 export function ConsoleIcon() {
   return <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">

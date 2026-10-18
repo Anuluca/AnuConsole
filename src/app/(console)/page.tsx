@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export default async function HomePage() {
-  await requireAdmin();
+  await requireUser();
   redirect("/anutrium");
 }

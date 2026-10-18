@@ -1,21 +1,23 @@
 "use client";
 
-import Link from "next/link";
+import { ProgressLink as Link } from "./route-progress";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { Brand, Arrow } from "./brand";
+import { RouteProgress } from "./route-progress";
 import { ThemeSwitch } from "./theme-provider";
 import { MenuIcon } from "./menu-icon";
 import { LogoutButton } from "./logout-button";
 import { ProjectSwitcher } from "./project-switcher";
 import { projectFromPath, type RouteItem } from "@/lib/projects";
+import type { UserIdentity } from "@/lib/accounts";
 
-export function ConsoleShell({ children, developmentMode = false }: { children: React.ReactNode; developmentMode?: boolean }) {
+export function ConsoleShell({ children, user, developmentMode = false }: { children: React.ReactNode; user: UserIdentity; developmentMode?: boolean }) {
   const pathname = usePathname();
   const project = projectFromPath(pathname);
   const routes = project.routes;
-  const [monitorOpen, setMonitorOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ monitor: true, infrastructure: true });
   const [mobile, setMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menu = useRef<HTMLDialogElement>(null);
@@ -74,12 +76,12 @@ export function ConsoleShell({ children, developmentMode = false }: { children: 
   </Link>;
   const navigation = <nav aria-label="主导航">
           {routes.map(route => route.children ? <div className="nav-group" key={route.href}>
-            <button className="nav-item nav-group-toggle" type="button" aria-expanded={monitorOpen} aria-controls="monitor-navigation" data-active={group?.href === route.href} onClick={() => setMonitorOpen(open => !open)}>
+            <button className="nav-item nav-group-toggle" type="button" aria-expanded={openGroups[route.key] !== false} aria-controls={`${route.key}-navigation`} data-active={group?.href === route.href} onClick={() => setOpenGroups(current => ({ ...current, [route.key]: current[route.key] === false }))}>
               <MenuIcon route={route.key} />
               <span className="nav-label">{route.label}</span>
               <svg className="nav-group-chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" /></svg>
             </button>
-            {monitorOpen && <div className="nav-group-list" id="monitor-navigation">{route.children.map(child => renderLink(child, true))}</div>}
+            {openGroups[route.key] !== false && <div className="nav-group-list" id={`${route.key}-navigation`}>{route.children.map(child => renderLink(child, true))}</div>}
           </div> : renderLink(route))}
         </nav>;
   return <div className="console" data-project={project.id} style={{
@@ -91,13 +93,14 @@ export function ConsoleShell({ children, developmentMode = false }: { children: 
     "--project-on-accent-light": project.themeColors?.light?.onAccent,
     "--project-on-accent-dark": project.themeColors?.dark?.onAccent
   } as CSSProperties}>
+    <RouteProgress />
     <a href="#main-content" className="skip-link">跳转到内容</a>
     <header className="topbar">
       <div className="topbar-projects"><Brand href={`/${project.id}`} subtitle="PROJECT BACKEND" /><ProjectSwitcher current={project.id} mobile={mobile} /></div>
       <div className="topbar-right">
         {project.siteUrl && <a className="site-link" href={project.siteUrl} target="_blank" rel="noreferrer">访问 {project.title} <Arrow diagonal /></a>}
         {!mobile && <ThemeSwitch />}
-        {!developmentMode && <span className="account"><span className="status-dot" />admin<span className="account-role">管理员</span></span>}
+        {(!developmentMode || user.role === "viewer") && <span className="account"><span className="status-dot" />{user.username}<span className="account-role">{user.role === "admin" ? "管理员" : "只读用户"}</span></span>}
         <LogoutButton />
         <button className="mobile-menu-trigger" type="button" aria-label="打开菜单" aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={openMenu}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -125,7 +128,10 @@ export function ConsoleShell({ children, developmentMode = false }: { children: 
             <div className="route-content">{children}</div>
           </div>
         </div>
-        <footer className="console-footer mono">{mobile && <ThemeSwitch />}<span>© {new Date().getFullYear()} ANUCONSOLE</span></footer>
+        <footer className="console-footer mono">{mobile && <div className="footer-actions">
+          <ThemeSwitch />
+          {project.siteUrl && <a className="site-link" href={project.siteUrl} target="_blank" rel="noopener noreferrer">访问 {project.title} <Arrow diagonal /></a>}
+        </div>}<span>© {new Date().getFullYear()} ANUCONSOLE</span></footer>
       </main>
     </div>
   </div>;

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ProgressLink as Link } from "./route-progress";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
 import { projects, type ProjectId } from "@/lib/projects";

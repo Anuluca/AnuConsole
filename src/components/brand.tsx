@@ -8,10 +8,10 @@ export function ConsoleIcon() {
   </svg>;
 }
 
-export function Brand({ light = false, href = "/" }: { light?: boolean; href?: string }) {
+export function Brand({ light = false, href = "/", subtitle = "ANUTRIUM BACKEND" }: { light?: boolean; href?: string; subtitle?: string }) {
   return <Link className={`brand${light ? " brand-light" : ""}`} href={href} aria-label="AnuConsole 首页">
     <span className="brand-symbol" aria-hidden="true"><ConsoleIcon /></span>
-    <span className="brand-wordmark">AnuConsole<span aria-label="ANUTRIUM BACKEND">{Array.from("ANUTRIUM BACKEND", (letter, index) => <span key={index} aria-hidden="true">{letter === " " ? "\u00a0" : letter}</span>)}</span></span>
+    <span className="brand-wordmark">AnuConsole<span aria-label={subtitle}>{Array.from(subtitle, (letter, index) => <span key={index} aria-hidden="true">{letter === " " ? "\u00a0" : letter}</span>)}</span></span>
   </Link>;
 }
 

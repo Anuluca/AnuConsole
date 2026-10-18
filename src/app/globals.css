@@ -204,11 +204,11 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .console { padding: 12px; }
   .topbar { min-height: 52px; border-radius: 0; gap: 12px; flex-wrap: wrap; }
   .topbar-projects { max-width: 100%; gap: 11px; }
-  .project-switcher { padding-left: 11px; }
+  .project-switcher { position: static; padding-left: 11px; }
   .project-current { font-size: 13px; }
-  .project-options { position: absolute; z-index: 60; top: calc(100% + 8px); left: 0; display: flex; flex-direction: column; align-items: stretch; min-width: 170px; margin: 0; padding: 6px; border: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 92%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); }
+  .project-options { position: absolute; z-index: 60; top: calc(100% + 8px); left: min(45%, calc(100% - 170px)); display: flex; flex-direction: column; align-items: stretch; min-width: 170px; margin: 0; padding: 6px; border: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 92%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); }
   .project-option { min-height: 42px; }
-  .topbar-right { margin-left: auto; }
+  .topbar-right { width: 100%; justify-content: flex-end; margin-left: auto; }
   .brand { gap: 9px; }
   .brand-symbol { width: 36px; height: 36px; border-radius: 0; }
   .brand-wordmark { font-size: 17px; gap: 4px; }

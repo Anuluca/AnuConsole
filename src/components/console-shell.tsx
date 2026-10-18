@@ -85,7 +85,7 @@ export function ConsoleShell({ children, developmentMode = false }: { children: 
   return <div className="console" data-project={project.id} style={{ "--accent": project.accent, "--on-accent": project.onAccent } as CSSProperties}>
     <a href="#main-content" className="skip-link">跳转到内容</a>
     <header className="topbar">
-      <div className="topbar-projects"><Brand href={`/${project.id}`} /><ProjectSwitcher current={project.id} mobile={mobile} /></div>
+      <div className="topbar-projects"><Brand href={`/${project.id}`} subtitle="PROJECT BACKEND" /><ProjectSwitcher current={project.id} mobile={mobile} /></div>
       <div className="topbar-right">
         {project.siteUrl && <a className="site-link" href={project.siteUrl} target="_blank" rel="noreferrer">访问 {project.title} <Arrow diagonal /></a>}
         {!mobile && <ThemeSwitch />}

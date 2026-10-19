@@ -37,7 +37,7 @@ test("DNS 记录增改删、筛选、取消确认与保存失败后的重新读�
   await recordType.click();
   await page.keyboard.press("Home");
   await page.keyboard.press("Enter");
-  await expect(recordType).toHaveText("A⌄");
+  await expect(recordType).toHaveText("A");
   await recordType.click();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeVisible();
@@ -100,7 +100,7 @@ test("Netlify 可精确访问项目，构建与恢复必须确认，设置只提
   await page.getByRole("link", { name: /sample-project/ }).click();
   await expect(page).toHaveURL(/\?site=demo-site$/);
   await expect(page.getByRole("heading", { level: 2, name: "sample-project" })).toBeVisible();
-  await page.getByRole("button", { name: "触发构建", exact: true }).click();
+  await page.getByRole("button", { name: "重新部署", exact: true }).click();
   await page.getByRole("dialog").getByLabel("构建分支", { exact: true }).fill("preview");
   await page.getByRole("dialog").getByLabel("清除构建缓存").check();
   await page.getByRole("button", { name: "确认构建", exact: true }).click();
@@ -132,6 +132,8 @@ test("环境变量隐藏已存值，修改单个上下文、添加变量和删�
   await page.goto("/anutrium/infrastructure/netlify?site=demo-site");
   await page.getByRole("button", { name: "环境变量", exact: true }).click();
   await expect(page.getByText("SERVICE_TOKEN", { exact: true })).toBeVisible();
+  await expect(page.locator(".infra-env-context")).toHaveCount(0);
+  await page.getByRole("button", { name: "详细配置", exact: true }).click();
   await expect(page.getByLabel("变量值已隐藏")).toHaveCount(2);
   await page.locator(".infra-env-context").filter({ hasText: "生产环境" }).getByRole("button", { name: "修改值", exact: true }).click();
   await expect(page.getByRole("dialog").getByLabel("新变量值")).toHaveValue("");
@@ -180,7 +182,7 @@ test("所有项目显示网站运维，运维跳转、部署详情和返回保�
     await expect(page.locator(".console")).toHaveAttribute("data-project", project.id);
     await page.goto(root);
     await expect(page).toHaveURL(`${root}/dns`);
-    await (await openNavigation(page)).getByRole("link", { name: "部署管理", exact: true }).click();
+    await (await openNavigation(page)).getByRole("link", { name: "项目部署", exact: true }).click();
     await expect(page).toHaveURL(`${root}/netlify`);
     await page.getByRole("link", { name: /sample-project/ }).click();
     await expect(page).toHaveURL(`${root}/netlify?site=demo-site`);
@@ -299,4 +301,25 @@ test("仓库可搜索选择、自动填入配置，未配置授权时不能关�
   await expect(dialog.getByRole("button", { name: "创建项目", exact: true })).toBeDisabled();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
+});
+
+test("项目预览图用于列表和详情，加载失败时隐藏", async ({ page }) => {
+  await mockNetlify(page);
+  await page.route("**/preview.test/site.svg", route => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120"><rect width="200" height="120" fill="#E23456"/></svg>' }));
+  await page.route("**/api/infrastructure/netlify**", async route => {
+    if (route.request().method() !== "GET") throw new Error("预览测试只允许读取");
+    const path = new URL(route.request().url()).pathname;
+    const site = { ...demoSite, screenshot_url: "https://preview.test/site.svg" };
+    if (path.endsWith("/demo-site")) return route.fulfill({ json: site });
+    if (path.endsWith("/netlify")) return route.fulfill({ json: { sites: [site], page: 1, hasMore: false, restricted: true } });
+    return route.fallback();
+  });
+  await page.goto("/anutrium/infrastructure/netlify");
+  const preview = page.getByRole("img", { name: "sample-project 网站预览" });
+  await expect(preview).toBeVisible();
+  await page.getByRole("link", { name: /管理项目/ }).click();
+  await expect(page.getByRole("region", { name: "Netlify项目详情", exact: true })).toBeVisible();
+  await expect(preview).toBeVisible();
+  await preview.evaluate(image => image.dispatchEvent(new Event("error")));
+  await expect(preview).toHaveCount(0);
 });

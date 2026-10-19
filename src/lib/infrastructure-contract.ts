@@ -21,7 +21,7 @@ export type EnvVariable = {
   values: { id: string; context: EnvContext; context_parameter?: string }[];
   updated_at?: string;
 };
-export type NetlifySite = { id: string; name: string; url: string; account: string; updated_at?: string; published_deploy?: string };
+export type NetlifySite = { screenshot_url?: string; id: string; name: string; url: string; account: string; updated_at?: string; published_deploy?: string };
 export type NetlifyDetail = NetlifySite & { settings: JsonObject; repo_url?: string; admin_url: string };
 export type NetlifyAccount = { id: string; slug: string; name: string };
 export type GitHubRepository = { id: number; path: string; defaultBranch: string; private: boolean; linked: boolean; buildCommand?: string; publishDirectory?: string };

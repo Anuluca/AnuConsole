@@ -1,5 +1,7 @@
 "use client";
 
+import { ManagementButton } from "./management-button";
+
 import { useState } from "react";
 import type { GitHubRepository, GitHubRepositoryPage } from "@/lib/infrastructure-contract";
 import { ManagementSelect, Pagination, ResourceState, useManagementResource } from "./ui";
@@ -11,7 +13,7 @@ export function GitHubRepositoryPicker({ value, onChange, disabled }: { value: G
   const filtered = resource.data?.repositories.filter(repository => repository.path.toLowerCase().includes(search.trim().toLowerCase())) ?? [];
   const choices = value && !filtered.some(repository => repository.id === value.id) ? [value, ...filtered] : filtered;
   return <div className="infra-section">
-    <div className="infra-toolbar"><h4>选择 GitHub 仓库</h4><button type="button" className="button-secondary" disabled={disabled || resource.loading} onClick={resource.reload}>刷新仓库</button></div>
+    <div className="infra-toolbar"><h4>选择 GitHub 仓库</h4><ManagementButton icon="refresh" type="button" className="button-secondary" disabled={disabled || resource.loading} onClick={resource.reload}>刷新仓库</ManagementButton></div>
     <ResourceState {...resource} retry={resource.reload} />
     {resource.data && <>
       <label>搜索当前页仓库<input value={search} onChange={event => setSearch(event.target.value)} placeholder="输入仓库名称或所有者" disabled={disabled} maxLength={255} /></label>

@@ -36,11 +36,11 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
   }
 
   await page.goto("/anutrium");
-  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "GA4浏览量", "功能调整", "数据维护", "域名解析", "部署管理", "关于"]);
+  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "浏览量", "功能调整", "数据维护", "域名解析", "项目部署", "关于"]);
 
   for (const route of [
     { label: "首页", title: "首页", path: "/anutrium" },
-    { label: "GA4浏览量", title: "GA4浏览量", path: "/anutrium/monitor/ga4" },
+    { label: "浏览量", title: "浏览量", path: "/anutrium/monitor/ga4" },
     { label: "功能调整", title: "功能调整", path: "/anutrium/features" },
     { label: "数据维护", title: "数据维护", path: "/anutrium/data" },
     { label: "关于", title: "关于", path: "/anutrium/about" }

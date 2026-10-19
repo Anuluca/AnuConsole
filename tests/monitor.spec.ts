@@ -28,7 +28,7 @@ test.beforeEach(async ({ page }) => {
 test("默认今天、移除工具栏、趋势、分类与手机布局", async ({ page }, testInfo) => {
   await page.route("**/api/analytics/summary?*", route => route.fulfill({ json: fixture(Number(new URL(route.request().url()).searchParams.get("days"))) }));
   await page.goto("/anutrium/monitor/ga4");
-  await expect(page.getByRole("heading", { name: "GA4浏览量", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "浏览量", exact: true })).toBeVisible();
   const overview = page.getByRole("region", { name: "概览", exact: true });
   await expect(overview.locator(".monitor-metric").first().locator("strong")).toHaveText("1");
   await expect(page.getByRole("group", { name: /页面浏览量每日趋势/ })).toBeVisible();
@@ -81,6 +81,7 @@ test("卡片标题、概览指标说明和趋势布局", async ({ page }, testIn
   await metrics.first().focus();
   await expect(metrics.first().getByRole("tooltip")).toContainText("同一个人只算一次");
   await overview.getByText("更多指标", { exact: true }).click();
+  await expect(page.locator(".monitor-trend")).toBeVisible();
   const trend = await page.locator(".monitor-trend").boundingBox();
   const live = await page.locator(".monitor-live").boundingBox();
   if (testInfo.project.name === "desktop") {
@@ -132,9 +133,12 @@ test("空数据有独立状态，相对更新时间随时钟自动变化", async
   await expect(page.locator(".route-header").getByRole("status")).toHaveText("已链接GA4");
   await expect(page.locator(".route-header .monitor-connection")).toHaveCSS("background-color", "rgb(25, 135, 84)");
   await expect(page.locator(".monitor-dashboard .monitor-connection")).toHaveCount(0);
-  const headingBox = await page.locator(".page-heading h1").boundingBox();
-  const badgeBox = await page.locator(".monitor-connection").boundingBox();
-  expect(Math.abs(headingBox!.y + headingBox!.height / 2 - badgeBox!.y - badgeBox!.height / 2)).toBeLessThanOrEqual(1);
+  // 状态与含副标题的标题区居中；在同一帧读取，避免字体加载影响采样。
+  await expect.poll(() => page.locator(".page-heading").evaluate(element => {
+    const heading = element.querySelector(".route-title")!.getBoundingClientRect();
+    const badge = element.querySelector(".monitor-connection")!.getBoundingClientRect();
+    return Math.abs(heading.y + heading.height / 2 - badge.y - badge.height / 2);
+  })).toBeLessThanOrEqual(1);
   await expect(page.locator(".monitor-dashboard")).not.toContainText("已连接统计服务，当前时间范围暂无访问数据");
   await expect(page.getByRole("region", { name: "页面浏览", exact: true })).toContainText("暂无数据");
   await expect(page.locator(".monitor-meta time")).toHaveText("5 分钟前");
@@ -196,7 +200,7 @@ test("监视器分组、子路由、面包屑与分组跳转", async ({ page }) 
   await expect(page).toHaveURL("/anutrium/monitor/ga4");
   const nav = await openNavigation(page);
   const group = nav.getByRole("button", { name: "监视器", exact: true });
-  const child = nav.getByRole("link", { name: "GA4浏览量", exact: true });
+  const child = nav.getByRole("link", { name: "浏览量", exact: true });
   await expect(group).toHaveAttribute("aria-expanded", "true");
   await expect(child).toHaveAttribute("aria-current", "page");
   const dimensions = await nav.locator(".nav-item").evaluateAll(items => items.map(item => ({
@@ -205,8 +209,8 @@ test("监视器分组、子路由、面包屑与分组跳转", async ({ page }) 
     icon: item.querySelector(".menu-icon")!.getBoundingClientRect().width,
   })));
   for (const item of dimensions) expect(item).toEqual(dimensions[0]);
-  await expect(page.getByRole("navigation", { name: "面包屑" })).toHaveText("Anutrium/监视器/GA4浏览量");
-  await expect(page).toHaveTitle("GA4浏览量 · AnuConsole");
+  await expect(page.getByRole("navigation", { name: "面包屑" })).toHaveText("Anutrium/监视器/浏览量");
+  await expect(page).toHaveTitle("浏览量 · AnuConsole");
   await group.click();
   await expect(group).toHaveAttribute("aria-expanded", "false");
   await expect(child).toHaveCount(0);

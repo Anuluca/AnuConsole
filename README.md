@@ -24,7 +24,7 @@ npm run dev
 | `/anutrium/features`、`/anutrium/data` | Anutrium 功能调整、数据维护 | admin 可修改，viewer 只读 |
 | `/drrr`、`/drrr/about` | DRRR情报屋首页、关于 | 开发免登录，生产 admin / viewer |
 
-首页、功能调整和数据维护保留空内容区；关于页介绍当前项目与控制台职能，并链接到 [AnuConsole GitHub 仓库](https://github.com/Anuluca/AnuConsole)。监视器接入网站既有 GA4 聚合报表。项目菜单与颜色在 `src/lib/projects.ts` 配置，页面 URL 包含项目名；旧业务地址不保留。
+Anutrium 首页展示四项浏览量概览指标、实时活跃用户、每日趋势和路卡雕像的头疼模式开关；概览和趋势固定读取今天，不显示时间范围切换、更多指标、更新时间栏和分类报表。读取和轮询策略与监视器一致，开关权限及计数与功能调整页一致。其他项目首页及数据维护页保持空内容区；关于页介绍当前项目与控制台职能，并链接到 [AnuConsole GitHub 仓库](https://github.com/Anuluca/AnuConsole)。监视器接入网站既有 GA4 聚合报表。项目菜单与颜色在 `src/lib/projects.ts` 配置，页面 URL 包含项目名；旧业务地址不保留。
 
 界面字体使用 Adobe Typekit 项目 `vjg4wuk` 的 `alibaba-puhuiti`。右上角可选择自动、浅色或深色主题，默认按浏览器本地时间 07:00–19:00 显示浅色，其余时间显示深色；偏好保存在当前浏览器中。路由内容切换时快速闪烁两下，启用减少动态效果时关闭动画。Next.js 开发指示器已禁用。
 
@@ -112,7 +112,7 @@ npm run start
 
 密钥配置、备份与丢失后的恢复步骤见 [首页功能开关备忘](docs/home-features-memo.md)。
 
-`/anutrium/features` 的“首页”模块提供“路卡雕像的头疼模式”开关。页面先读取真实状态；读取失败时显示状态未知并禁用开关，重试后恢复。保存期间禁用开关，收到服务端成功结果后更新；保存失败则重新读取确认状态。页面同时显示服务端返回的累计头疼次数；初始历史基数为 10，仅从关闭切换为开启时新增一次记录，关闭和重复保存不计数。记录保存在 Anutrium Worker 既有 R2 配置中。
+`/anutrium/features` 的“首页”模块提供“路卡雕像的头疼模式”开关。页面先读取真实状态；读取失败时显示状态未知并禁用开关，重试后恢复。保存期间禁用开关，收到服务端成功结果后更新；保存失败则重新读取确认状态。页面同时显示服务端返回的累计头疼次数；初始历史基数为 10，仅从关闭切换为开启时新增一次记录，关闭和重复保存不计数。记录保存在 Anutrium Worker 既有 R2 配置中。兼容尚未提供 `headacheCount` 的旧 Worker：开关仍可读取和保存，次数显示为暂不可用；旧 Worker 不支持新增发作记录。
 
 浏览器只访问 `/api/features/home`；GET 执行 `requireUser()`，PUT 执行 `requireAdmin()`，PUT 还检查请求来源、JSON 类型、字段和请求体大小。后台使用服务端密钥代理 Worker 的 `/admin/home-features`，不向浏览器暴露密钥或上游错误详情。所有响应不缓存。
 

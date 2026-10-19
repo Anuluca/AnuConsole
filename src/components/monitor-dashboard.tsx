@@ -93,7 +93,7 @@ function Trend({ report, loading }: { report?: AnalyticsReport; loading: boolean
   </section>;
 }
 
-export function MonitorDashboard() {
+export function MonitorDashboard({ overviewOnly = false }: { overviewOnly?: boolean }) {
   const [statusTarget, setStatusTarget] = useState<HTMLElement | null>(null);
   useEffect(() => { setStatusTarget(document.getElementById("route-heading-status")); }, []);
   const [days, setDays] = useState<AnalyticsRange>(1);
@@ -117,9 +117,9 @@ export function MonitorDashboard() {
     return report?.status === "ready" ? report.rows[0]?.metrics : undefined;
   })) as Record<string, number>;
   const metricCard = (key: string) => <OverviewMetric key={key} name={key} value={metrics[key]} />;
-  return <section className="monitor-dashboard" aria-label="监视器内容区">
-    {statusTarget && (data || realtime.data) && !summary.error && !realtime.error && createPortal(<span className="monitor-connection" role="status"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>已链接GA4</span>, statusTarget)}
-    <div className="monitor-meta">
+  return <section className={`monitor-dashboard${overviewOnly ? " home-analytics" : ""}`} aria-label={overviewOnly ? "浏览量概览" : "监视器内容区"}>
+    {!overviewOnly && statusTarget && (data || realtime.data) && !summary.error && !realtime.error && createPortal(<span className="monitor-connection" role="status"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>已链接GA4</span>, statusTarget)}
+    {!overviewOnly && <div className="monitor-meta">
       <div className="monitor-meta-actions">
         <div className="monitor-options" role="group" aria-label="统计时间范围">
           {ANALYTICS_RANGES.map(range => <button type="button" key={range} aria-pressed={days === range} onClick={() => setDays(range)}>{range === 1 ? "今天" : `近 ${range} 天`}</button>)}
@@ -129,39 +129,44 @@ export function MonitorDashboard() {
         <span>{summary.error.includes("尚未配置") ? "尚未配置" : "读取失败"}{data && <span className="monitor-stale-note">（保留上次结果）</span>}</span>
         <RetryButton onClick={() => setRefresh(value => value + 1)} />
       </div> : summary.loading ? <LoadingIndicator compact label="正在读取统计" /> : <span>更新于 <RelativeTime value={data?.generatedAt} /></span>}
-    </div>
-    {!!data?.reports.length && data.reports.every(report => report.status === "unavailable") && <p className="monitor-note">所有报表暂不可用，请稍后重试。</p>}
-    <div ref={activityRow} className={`monitor-activity-row${moreOpen ? " monitor-activity-expanded" : ""}`} style={{ minHeight: moreOpen ? expandedHeight : undefined }}>
+    </div>}
+    {!overviewOnly && !!data?.reports.length && data.reports.every(report => report.status === "unavailable") && <p className="monitor-note">所有报表暂不可用，请稍后重试。</p>}
+    <div ref={activityRow} className={overviewOnly ? "home-analytics-grid" : `monitor-activity-row${moreOpen ? " monitor-activity-expanded" : ""}`} style={{ minHeight: !overviewOnly && moreOpen ? expandedHeight : undefined }}>
     <section className="monitor-card monitor-overview" aria-label="概览" aria-busy={summary.loading}>
-      <header><h2>概览</h2></header>
+      <header><h2>概览</h2>{overviewOnly && summary.error && <div className="monitor-summary-error" role="alert">
+        <span>读取失败</span><RetryButton onClick={() => setRefresh(value => value + 1)} />
+      </div>}</header>
       <div className="monitor-default-row">
         <div className="monitor-metrics">{PRIMARY_METRICS.map(metricCard)}</div>
-        <button type="button" className="monitor-more-toggle" aria-expanded={moreOpen} aria-controls="monitor-more-metrics" onClick={toggleOverview}>
+        {!overviewOnly && <button type="button" className="monitor-more-toggle" aria-expanded={moreOpen} aria-controls="monitor-more-metrics" onClick={toggleOverview}>
           更多指标<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m6 4 4 4-4 4" /></svg>
-        </button>
+        </button>}
       </div>
-      {moreOpen && <div className="monitor-more" id="monitor-more-metrics"><div className="monitor-metrics">{OVERVIEW_METRICS.filter(key => !PRIMARY_METRICS.includes(key)).map(metricCard)}</div></div>}
+      {!overviewOnly && moreOpen && <div className="monitor-more" id="monitor-more-metrics"><div className="monitor-metrics">{OVERVIEW_METRICS.filter(key => !PRIMARY_METRICS.includes(key)).map(metricCard)}</div></div>}
       {["overview", "engagement"].map(id => <ReportNotice key={id} report={reports.get(id)} />)}
       {data && ["overview", "engagement"].some(id => reports.get(id)?.status !== "ready") && <p className="monitor-note">部分汇总指标暂不可用。</p>}
     </section>
-      <div className="monitor-live-panel">
+      <div className={overviewOnly ? "home-live-panel" : "monitor-live-panel"}>
       <section className="monitor-card monitor-live" aria-label="实时统计" aria-busy={realtime.loading}>
-        <header><h2>实时活跃用户</h2><p>近 30 分钟 · 每分钟自动读取</p></header>
+        <header><h2>实时活跃用户</h2>{!overviewOnly && <p>近 30 分钟 · 每分钟自动读取</p>}</header>
         <div className="monitor-live-content">
           <strong>{formatMetric("activeUsers", realtime.data?.activeUsers)}</strong>
-          <p>更新于 <RelativeTime value={realtime.data?.generatedAt} /></p>
+          {!overviewOnly && <p>更新于 <RelativeTime value={realtime.data?.generatedAt} /></p>}
         </div>
         {realtime.error && <p className="monitor-error" role="alert">实时统计：{realtime.error}{realtime.data ? " 当前保留上次结果。" : ""}<RetryButton onClick={() => setRefresh(value => value + 1)} /></p>}
       </section>
-      <ReportTable className="monitor-live-countries" id="realtimeCountries" report={liveReports.get("realtimeCountries")} loading={realtime.loading} />
-      <ReportTable className="monitor-live-events" id="realtimeEvents" report={liveReports.get("realtimeEvents")} loading={realtime.loading} />
+      {!overviewOnly && <>
+        <ReportTable className="monitor-live-countries" id="realtimeCountries" report={liveReports.get("realtimeCountries")} loading={realtime.loading} />
+        <ReportTable className="monitor-live-events" id="realtimeEvents" report={liveReports.get("realtimeEvents")} loading={realtime.loading} />
+      </>}
       </div>
-      <Trend report={reports.get("trend")} loading={summary.loading} />
+      {!overviewOnly && <Trend report={reports.get("trend")} loading={summary.loading} />}
     </div>
-    <section className="monitor-details" aria-label="分类报表">
+    {overviewOnly && <Trend report={reports.get("trend")} loading={summary.loading} />}
+    {!overviewOnly && <><section className="monitor-details" aria-label="分类报表">
       <div className="monitor-section-heading"><h2>分类报表</h2><div className="monitor-options monitor-groups" role="group" aria-label="报表分类">{REPORT_GROUPS.map((item, i) => <button key={item.title} type="button" aria-pressed={group === i} onClick={() => setGroup(i)}>{item.title}</button>)}</div></div>
       <div className={`monitor-reports${["来源", "地域", "行为", "作品与工具"].includes(REPORT_GROUPS[group].title) ? " monitor-reports-three" : ""}${REPORT_GROUPS[group].title === "地域" ? " monitor-reports-region" : ""}${REPORT_GROUPS[group].title === "设备" ? " monitor-reports-devices" : ""}`}>{REPORT_GROUPS[group].ids.map(id => <ReportTable key={id} id={id} report={reports.get(id)} loading={summary.loading} />)}</div>
     </section>
-    <AnalyticsLinks />
+    <AnalyticsLinks /></>}
   </section>;
 }

@@ -4,6 +4,8 @@ export type RouteKey = "home" | "monitor" | "ga4" | "features" | "data" | "infra
 export type RouteItem = {
   key: RouteKey;
   label: string;
+  // 可选副标题仅显示在内容区标题旁，不影响菜单和面包屑。
+  subtitle?: string;
   href: string;
   children?: RouteItem[];
 };
@@ -31,7 +33,7 @@ const projectDefinitions: readonly Project[] = [
     routes: [
       shared("anutrium", "home", "首页"),
       { key: "monitor", label: "监视器", href: "/anutrium/monitor", children: [
-        { key: "ga4", label: "GA4浏览量", href: "/anutrium/monitor/ga4" }
+        { key: "ga4", label: "浏览量", subtitle: "（基于Google Analytics）", href: "/anutrium/monitor/ga4" }
       ] },
       { key: "features", label: "功能调整", href: "/anutrium/features" },
       { key: "data", label: "数据维护", href: "/anutrium/data" },
@@ -51,8 +53,8 @@ export const projects: readonly Project[] = projectDefinitions.map(project => {
   const aboutIndex = routes.findIndex(route => route.key === "about");
   routes.splice(aboutIndex < 0 ? routes.length : aboutIndex, 0, {
     key: "infrastructure", label: "网站运维", href: `/${project.id}/infrastructure`, children: [
-      { key: "dns", label: "域名解析", href: `/${project.id}/infrastructure/dns` },
-      { key: "netlify", label: "部署管理", href: `/${project.id}/infrastructure/netlify` }
+      { key: "dns", label: "域名解析", subtitle: "（基于Cloudflare）", href: `/${project.id}/infrastructure/dns` },
+      { key: "netlify", label: "项目部署", subtitle: "（基于Netlify）", href: `/${project.id}/infrastructure/netlify` }
     ]
   });
   return { ...project, routes };

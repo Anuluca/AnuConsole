@@ -39,10 +39,10 @@ test("手机全屏菜单、路由选择、焦点及页脚主题", async ({ page 
   expect(Math.abs(after!.x - initial!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(after!.y - initial!.y)).toBeLessThanOrEqual(1);
   await trigger.click();
-  await menu.getByRole("link", { name: "GA4浏览量", exact: true }).click();
+  await menu.getByRole("link", { name: "浏览量", exact: true }).click();
   await expect(page).toHaveURL("/anutrium/monitor/ga4");
   await expect(menu).toBeHidden();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("GA4浏览量");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("浏览量");
   await trigger.click();
   await page.getByRole("button", { name: "关闭菜单", exact: true }).click();
   await expect(menu).toBeHidden();

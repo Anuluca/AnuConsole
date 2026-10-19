@@ -3,7 +3,7 @@ import { getProject } from "@/lib/projects";
 import { NetlifyManager } from "@/components/infrastructure/netlify-manager";
 import { identifier } from "@/lib/infrastructure-contract";
 import { notFound } from "next/navigation";
-export const metadata = { title: "部署管理" };
+export const metadata = { title: "项目部署" };
 export default async function NetlifyPage({ params, searchParams }: { params: Promise<{ project: string }>; searchParams: Promise<{ site?: string }> }) {
   const user = await requireUser();
   const project = getProject((await params).project);

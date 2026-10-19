@@ -76,3 +76,21 @@ test("写入接口拒绝跨站请求和无效参数", async ({ request }) => {
     expect(response.status()).toBe(400);
   }
 });
+
+test("旧版接口仍可读写开关，次数未知时不显示虚假计数", async ({ page }) => {
+  test.skip(process.env.E2E_AUTH_MODE === "production", "生产身份验证由认证回归覆盖");
+  let enabled = true;
+  await page.route("**/api/features/home", route => {
+    if (route.request().method() === "PUT") enabled = route.request().postDataJSON().lucarioHeadache;
+    return route.fulfill({ json: { lucarioHeadache: enabled, updatedAt: null } });
+  });
+  await page.goto("/anutrium/features");
+  const toggle = page.getByRole("switch", { name: "路卡雕像的头疼模式" });
+  await expect(toggle).toBeChecked();
+  await expect(page.locator("#lucario-headache-description")).toHaveText("每次从关闭切换为开启记录一次，保存后刷新首页生效。");
+  await expect(page.getByText(/累计头疼/)).toHaveCount(0);
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
+  await expect(toggle).toBeEnabled();
+  await expect(page.locator(".features-workspace").getByRole("alert")).toHaveCount(0);
+});

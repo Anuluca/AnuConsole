@@ -1,5 +1,7 @@
 "use client";
 
+import { ManagementButton } from "./management-button";
+
 import { useId, useState, type FormEvent } from "react";
 import { buildFields, object, siteFields, validateSiteSettings, type JsonObject, type SettingField } from "@/lib/infrastructure-contract";
 import { ManagementModal } from "./ui";
@@ -48,7 +50,7 @@ export function NetlifySettings({ settings, writable, busy, onSave }: { settings
   const pretty = object(patch.processing_settings) ? patch.processing_settings : object(settings.processing_settings) ? settings.processing_settings : {};
   return <>
     <form className="infra-form" id={formId} onSubmit={submit}>
-      <div className="infra-toolbar"><div><h3>项目设置</h3><p className="infra-muted">字段是否可用由 Netlify 权限和套餐决定。仓库中的 netlify.toml 会覆盖对应构建设置。</p></div><div className="infra-actions"><button type="button" className="button-secondary" onClick={() => { setAdvanced(value => !value); setSource(JSON.stringify(patch, null, 2)); }}>{advanced ? "返回表单" : "高级编辑"}</button></div></div>
+      <div className="infra-toolbar"><div><h3>项目设置</h3><p className="infra-muted">字段是否可用由 Netlify 权限和套餐决定。仓库中的 netlify.toml 会覆盖对应构建设置。</p></div><div className="infra-actions"><ManagementButton icon="edit" type="button" className="button-secondary" onClick={() => { setAdvanced(value => !value); setSource(JSON.stringify(patch, null, 2)); }}>{advanced ? "返回表单" : "高级编辑"}</ManagementButton></div></div>
       <fieldset disabled={!writable || busy}>
         {advanced ? <label>配置变更 JSON<textarea className="infra-code" rows={18} spellCheck={false} value={source} onChange={event => setSource(event.target.value)} /><small>只提交需要修改的字段。支持 siteSetup 中的项目配置、build_settings、repo 和 processing_settings。</small></label>
           : <><h4>基本配置与域名</h4><div className="infra-form-grid">{Object.entries(siteFields).map(([key, definition]) => field(key, definition))}</div>
@@ -57,10 +59,10 @@ export function NetlifySettings({ settings, writable, busy, onSave }: { settings
             <details className="infra-details"><summary>Git 仓库连接配置</summary><p className="infra-muted">更换仓库前需在 Netlify 授权对应 Git 提供方；仅填写此处字段不会授予仓库访问权限。</p><div className="infra-form-grid">{Object.entries(buildFields).slice(8).map(([key, definition]) => field(key, definition, "build_settings"))}</div></details></>}
       </fieldset>
       {error && <p className="infra-error" role="alert">{error}</p>}
-      <div className="infra-actions"><a className="infra-text-link" href="https://open-api.netlify.com/#tag/site/operation/updateSite" target="_blank" rel="noreferrer">查看可用配置字段 ↗</a>{writable && <button className="button-primary" type="submit" disabled={busy}>保存设置</button>}</div>
+      <div className="infra-actions"><a className="infra-text-link" href="https://open-api.netlify.com/#tag/site/operation/updateSite" target="_blank" rel="noreferrer">查看可用配置字段 ↗</a>{writable && <ManagementButton icon="check" className="button-primary" type="submit" disabled={busy}>保存设置</ManagementButton>}</div>
     </form>
     {confirm && <ManagementModal title="保存项目设置？" busy={busy} closeRequested={closing} onClose={() => setConfirm(null)} description="修改域名、仓库或构建配置可能影响后续部署。"
-      footer={<><button className="button-secondary" type="button" data-close-modal disabled={busy}>取消</button><button className="button-primary" type="button" disabled={busy} onClick={() => { void save(); }}>{busy ? "正在保存…" : "确认保存"}</button></>}>
+      footer={<><ManagementButton icon="close" className="button-secondary" type="button" data-close-modal disabled={busy}>取消</ManagementButton><ManagementButton icon="check" className="button-primary" type="button" disabled={busy} onClick={() => { void save(); }}>{busy ? "正在保存…" : "确认保存"}</ManagementButton></>}>
       <p>此次修改：{Object.keys(confirm).map(key => siteFields[key]?.label ?? (key === "build_settings" ? "构建设置" : key === "repo" ? "仓库连接" : "HTML 处理设置")).join("、")}。</p>
     </ManagementModal>}
   </>;

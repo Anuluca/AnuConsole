@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { infrastructureMessages } from "@/lib/infrastructure-contract";
+import { ManagementButton } from "./management-button";
 import { LoadingIndicator } from "../loading-indicator";
 
 export async function managementRequest<T>(url: string, method = "GET", body?: unknown, signal?: AbortSignal): Promise<T> {
@@ -43,7 +44,7 @@ export function useManagementResource<T>(url: string | null) {
 }
 
 export function ResourceState({ loading, error, retry }: { loading?: boolean; error?: string; retry: () => void }) {
-  if (error) return <div className="infra-notice infra-error" role="alert"><span>{error}</span><button type="button" className="button-secondary" onClick={retry}>重试</button></div>;
+  if (error) return <div className="infra-notice infra-error" role="alert"><span>{error}</span><ManagementButton icon="refresh" type="button" onClick={retry}>重试</ManagementButton></div>;
   if (loading) return <LoadingIndicator label="正在读取数据" />;
   return null;
 }
@@ -80,15 +81,15 @@ export function ManagementSelect({ label, value, options, onChange, disabled = f
     else if (event.key === "Escape" && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus(); }
   }}>
     <button ref={trigger} type="button" className="infra-select-trigger" disabled={disabled} aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId}
-      onClick={() => { setIndex(Math.max(0, options.findIndex(option => option.value === value))); setOpen(current => !current); }}><span>{options.find(option => option.value === value)?.label ?? value}</span><span aria-hidden="true">⌄</span></button>
+      onClick={() => { setIndex(Math.max(0, options.findIndex(option => option.value === value))); setOpen(current => !current); }}><span>{options.find(option => option.value === value)?.label ?? value}</span><svg className="infra-select-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
     {open && <div className="infra-select-options" id={listId} role="listbox" tabIndex={-1} aria-activedescendant={`${listId}-${index}`} aria-label={label}>{options.map((option, optionIndex) =>
       <button key={option.value} type="button" role="option" tabIndex={-1} id={`${listId}-${optionIndex}`} data-index={optionIndex} aria-selected={value === option.value} data-highlighted={index === optionIndex}
         onPointerMove={() => setIndex(optionIndex)} onClick={() => choose(option.value)}>{option.label}</button>)}</div>}
   </div>;
 }
 
-export function ManagementModal({ title, children, footer, onClose, busy = false, description, closeRequested = false }: {
-  title: string; children: ReactNode; footer?: ReactNode; onClose: () => void; busy?: boolean; description?: string; closeRequested?: boolean;
+export function ManagementModal({ title, children, footer, onClose, busy = false, description, closeRequested = false, danger = false }: {
+  title: string; children: ReactNode; footer?: ReactNode; onClose: () => void; busy?: boolean; description?: string; closeRequested?: boolean; danger?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const motion = useRef<Animation | null>(null);
@@ -115,7 +116,7 @@ export function ManagementModal({ title, children, footer, onClose, busy = false
     onClose();
   }
   useEffect(() => { if (closeRequested && !busy) void dismiss(); });
-  return <dialog ref={ref} className="infra-modal" aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={event => { event.preventDefault(); void dismiss(); }}>
+  return <dialog ref={ref} className={`infra-modal${danger ? " infra-modal-danger" : ""}`} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={event => { event.preventDefault(); void dismiss(); }}>
     <header className="infra-modal-header"><h2 id={titleId}>{title}</h2><button type="button" className="infra-icon-button" disabled={busy} aria-label="关闭弹窗" onClick={() => { void dismiss(); }}>×</button></header>
     <div className="infra-modal-content">{description && <p className="infra-muted" id={descriptionId}>{description}</p>}{children}</div>
     {footer && <footer className="infra-modal-footer" onClickCapture={event => {
@@ -125,7 +126,7 @@ export function ManagementModal({ title, children, footer, onClose, busy = false
 }
 
 export function Pagination({ page, hasNext, onChange, disabled = false }: { page: number; hasNext: boolean; onChange: (page: number) => void; disabled?: boolean }) {
-  return <nav className="infra-pagination" aria-label="数据分页"><button type="button" className="button-secondary" disabled={disabled || page <= 1} onClick={() => onChange(page - 1)}>上一页</button><span>第 {page} 页</span><button type="button" className="button-secondary" disabled={disabled || !hasNext} onClick={() => onChange(page + 1)}>下一页</button></nav>;
+  return <nav className="infra-pagination" aria-label="数据分页"><ManagementButton icon="left" type="button" disabled={disabled || page <= 1} onClick={() => onChange(page - 1)}>上一页</ManagementButton><span>第 {page} 页</span><ManagementButton icon="right" type="button" disabled={disabled || !hasNext} onClick={() => onChange(page + 1)}>下一页</ManagementButton></nav>;
 }
 export function displayDate(value?: string) {
   return value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "—";

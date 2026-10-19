@@ -1,5 +1,7 @@
 "use client";
 
+import { ManagementButton } from "./management-button";
+
 import { useId, useState, type FormEvent } from "react";
 import { validateNetlifyCreate, type GitHubRepository, type JsonObject, type NetlifyAccount, type NetlifyDetail } from "@/lib/infrastructure-contract";
 import { ManagementModal, ManagementSelect, ResourceState, managementRequest, useManagementResource } from "./ui";
@@ -44,7 +46,7 @@ export function NetlifyCreate({ onClose, onCreated, onFailed }: { onClose: () =>
   }
   function dismiss() { if (created) onCreated(created); else onClose(); }
   return <ManagementModal title="新增 Netlify 项目" description="选择项目所属团队。空项目创建后可继续配置环境变量和部署；关联 Git 仓库可能触发首次构建。" busy={busy} closeRequested={closing} onClose={dismiss}
-    footer={<><button type="button" className="button-secondary" data-close-modal disabled={busy}>取消</button><button type="submit" className="button-primary" form={formId} disabled={busy || !selectedAccount || !teams.data?.accounts.length || (useGit && !repository)}>{busy ? "正在创建…" : "创建项目"}</button></>}>
+    footer={<><ManagementButton icon="close" type="button" className="button-secondary" data-close-modal disabled={busy}>取消</ManagementButton><ManagementButton icon="add" type="submit" className="button-primary" form={formId} disabled={busy || !selectedAccount || !teams.data?.accounts.length || (useGit && !repository)}>{busy ? "正在创建…" : "创建项目"}</ManagementButton></>}>
     <ResourceState {...teams} retry={teams.reload} />
     {teams.data && !teams.data.accounts.length && <p className="infra-notice">当前令牌未关联可用团队，请检查 Netlify 账号权限。</p>}
     <form className="infra-form" id={formId} onSubmit={event => { void submit(event); }}><fieldset disabled={busy || teams.loading || !teams.data?.accounts.length}>

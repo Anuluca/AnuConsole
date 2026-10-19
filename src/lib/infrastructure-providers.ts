@@ -79,7 +79,7 @@ function siteAllowed(id: string): boolean {
 }
 function siteSummary(value: unknown): NetlifySite {
   if (!object(value) || typeof value.id !== "string" || typeof value.name !== "string") throw new InfrastructureError("invalid_response", 502);
-  return { id: value.id, name: value.name, url: safeUrl(value.ssl_url || value.url), account: String(value.account_name || value.account_slug || ""), updated_at: typeof value.updated_at === "string" ? value.updated_at : undefined,
+  return { id: value.id, name: value.name, screenshot_url: safeUrl(value.screenshot_url || (object(value.published_deploy) ? value.published_deploy.screenshot_url : "")) || undefined, url: safeUrl(value.ssl_url || value.url), account: String(value.account_name || value.account_slug || ""), updated_at: typeof value.updated_at === "string" ? value.updated_at : undefined,
     published_deploy: object(value.published_deploy) && typeof value.published_deploy.id === "string" ? value.published_deploy.id : undefined };
 }
 function safeUrl(value: unknown): string {

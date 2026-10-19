@@ -30,7 +30,7 @@ test("项目地址决定菜单、主题色和可访问的业务路由", async ({
     await expect(page.locator(".project-current")).toHaveCSS("color", "rgb(226, 52, 86)");
     await expect(page.locator(".console")).toHaveCSS("--on-accent", "#fff");
   }
-  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "GA4浏览量", "功能调整", "数据维护", "域名解析", "部署管理", "关于"]);
+  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "浏览量", "功能调整", "数据维护", "域名解析", "项目部署", "关于"]);
   if (testInfo.project.name === "mobile") await page.getByRole("button", { name: "关闭菜单" }).click();
 
   const trigger = page.getByRole("button", { name: /当前项目：Anutrium/ });
@@ -56,7 +56,7 @@ test("项目地址决定菜单、主题色和可访问的业务路由", async ({
   await expect(page.locator(".project-current")).toHaveCSS("font-family", /alibaba-puhuiti/);
   await expect(page.locator(".project-switcher")).toHaveCSS("border-left-color", /\/ 0\.6\)/);
   await expect(page.locator(".site-link")).toHaveAttribute("href", "https://drrr.anuluca.com");
-  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "域名解析", "部署管理", "关于"]);
+  await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "域名解析", "项目部署", "关于"]);
   if (testInfo.project.name === "mobile") await expect(choices).toHaveCount(0);
   else await expect(choices).toBeVisible();
 

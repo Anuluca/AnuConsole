@@ -1,16 +1,14 @@
 "use client";
 
+import { ManagementButton } from "./management-button";
+import { ConnectionStatus } from "./connection-status";
+
 import { useId, useState, type FormEvent } from "react";
 import { DNS_ZONE, dnsTypes, validateDns, type DnsInput, type DnsPage, type DnsRecord } from "@/lib/infrastructure-contract";
 import { ActionMessage, ManagementModal, ManagementSelect, Pagination, ReadOnly, ResourceState, managementRequest, useManagementResource } from "./ui";
 
 const simpleTypes = ["A", "AAAA", "CNAME", "TXT", "MX", "NS", "PTR"];
 
-function DnsActionIcon({ action }: { action: "edit" | "delete" }) {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {action === "edit" ? <><path d="m16 3 5 5-12 12-6 1 1-6Z" /><path d="m14 5 5 5" /></> : <><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" /></>}
-  </svg>;
-}
 
 function DnsEditor({ record, busy, closeRequested, onClose, onSave }: {
   record: DnsRecord | null; busy: boolean; closeRequested: boolean; onClose: () => void; onSave: (input: DnsInput) => void;
@@ -37,7 +35,7 @@ function DnsEditor({ record, busy, closeRequested, onClose, onSave }: {
     } catch { setError("记录内容无效，请检查名称、TTL 和高级字段。高级字段使用合法 JSON，只包含 data、settings。"); }
   }
   return <ManagementModal title={record ? "编辑 DNS 记录" : "新增 DNS 记录"} busy={busy} onClose={onClose} closeRequested={closeRequested}
-    footer={<><button type="button" className="button-secondary" data-close-modal disabled={busy}>取消</button><button className="button-primary" type="submit" form={formId} disabled={busy}>{busy ? "正在保存…" : "保存记录"}</button></>}>
+    footer={<><ManagementButton icon="close" type="button" className="button-secondary" data-close-modal disabled={busy}>取消</ManagementButton><ManagementButton icon="check" className="button-primary" type="submit" form={formId} disabled={busy}>{busy ? "正在保存…" : "保存记录"}</ManagementButton></>}>
     <form id={formId} className="infra-form" onSubmit={submit}>
       <fieldset disabled={busy}><div className="infra-form-grid">
         <label>记录类型<ManagementSelect label="记录类型" value={type} options={dnsTypes.map(value => ({ value, label: value }))} onChange={value => setType(value as DnsInput["type"])} disabled={busy} /></label>
@@ -78,12 +76,13 @@ export function DnsManager({ writable }: { writable: boolean }) {
     finally { setBusy(false); setCloseRequested(true); resource.reload(); }
   }
   return <section className="infra-workspace" aria-label="DNS记录管理">
-    <div className="infra-toolbar"><div><h2>{DNS_ZONE}</h2><p className="infra-muted">Cloudflare DNS {resource.data ? `· ${resource.data.total} 条记录` : ""}</p></div><div className="infra-actions"><button type="button" className="button-secondary" onClick={resource.reload} disabled={busy || resource.loading}>刷新</button>{writable && <button type="button" className="button-primary" onClick={() => { setCloseRequested(false); setEditor({ record: null }); }}>新增记录</button>}</div></div>
+    <ConnectionStatus service="Cloudflare" connected={!!resource.data && !resource.error} />
+    <div className="infra-toolbar dns-toolbar"><div><h2>{DNS_ZONE}</h2><p className="infra-muted">Cloudflare DNS {resource.data ? `· ${resource.data.total} 条记录` : ""}</p></div><div className="infra-actions"><ManagementButton icon="refresh" type="button" className="button-secondary" onClick={resource.reload} disabled={busy || resource.loading}>刷新</ManagementButton>{writable && <ManagementButton icon="add" type="button" className="button-primary" onClick={() => { setCloseRequested(false); setEditor({ record: null }); }}>新增记录</ManagementButton>}</div></div>
     <ReadOnly writable={writable} /><ActionMessage message={message} />
     <form className="infra-filters" onSubmit={event => { event.preventDefault(); setPage(1); setQuery(search.trim()); }}>
       <input aria-label="搜索 DNS 记录" placeholder="搜索名称或内容" value={search} onChange={event => setSearch(event.target.value)} maxLength={253} />
       <ManagementSelect label="筛选记录类型" value={type} options={[{ value: "", label: "全部类型" }, ...dnsTypes.map(value => ({ value, label: value }))]} onChange={value => { setType(value); setPage(1); }} />
-      <button className="button-secondary" type="submit">搜索</button>
+      <ManagementButton icon="search" className="button-secondary" type="submit">搜索</ManagementButton>
     </form>
     <ResourceState {...resource} retry={resource.reload} />
     {resource.data && <><div className="infra-table-wrap"><table className="infra-table dns-table"><thead><tr><th scope="col">类型</th><th scope="col">名称</th><th scope="col">内容</th><th scope="col">代理 / TTL</th><th scope="col">备注</th>{writable && <th scope="col">操作</th>}</tr></thead><tbody>
@@ -94,13 +93,14 @@ export function DnsManager({ writable }: { writable: boolean }) {
         <td data-label="代理 / TTL"><span className="dns-record-routing">{record.proxied ? "已代理" : "仅 DNS"} / {record.ttl === 1 ? "自动 TTL" : `${record.ttl} 秒`}</span></td>
         <td data-label="备注">{record.comment || "—"}</td>
         {writable && <td data-label="操作"><div className="infra-actions">
-          <button className="infra-text-button" type="button" onClick={() => { setCloseRequested(false); setEditor({ record }); }}><DnsActionIcon action="edit" />编辑</button>
-          <button className="infra-text-button infra-danger" type="button" onClick={() => { setCloseRequested(false); setDeleting(record); }}><DnsActionIcon action="delete" />删除</button>
+          <ManagementButton icon="edit" className="infra-text-button" type="button" onClick={() => { setCloseRequested(false); setEditor({ record }); }}>编辑</ManagementButton>
+          <ManagementButton icon="delete" className="infra-text-button infra-danger" type="button" onClick={() => { setCloseRequested(false); setDeleting(record); }}>删除</ManagementButton>
         </div></td>}
       </tr>)}
     </tbody></table>{!resource.data.records.length && <p className="infra-empty">没有符合条件的 DNS 记录。</p>}</div><Pagination page={page} hasNext={page < resource.data.pages} onChange={setPage} /></>}
     {editor && <DnsEditor record={editor.record} busy={busy} closeRequested={closeRequested} onClose={close} onSave={input => { void mutate(editor.record ? "PATCH" : "POST", editor.record?.id, input); }} />}
-    {deleting && <ManagementModal title="删除 DNS 记录？" description="删除后，该记录将不再参与域名解析。" busy={busy} closeRequested={closeRequested} onClose={close}
-      footer={<><button className="button-secondary" type="button" data-close-modal disabled={busy}>取消</button><button className="button-primary" type="button" disabled={busy} onClick={() => { void mutate("DELETE", deleting.id); }}>{busy ? "正在删除…" : "确认删除"}</button></>}><p className="infra-break">{deleting.type} · {deleting.name}</p><p className="infra-muted infra-break">{deleting.content}</p></ManagementModal>}
+    {deleting && <ManagementModal danger title="删除 DNS 记录？" description="删除后，该记录将不再参与域名解析。" busy={busy} closeRequested={closeRequested} onClose={close}
+      footer={<><ManagementButton icon="close" className="button-secondary" type="button" data-close-modal disabled={busy}>取消</ManagementButton><ManagementButton icon="delete" className="button-primary button-danger" type="button" disabled={busy} onClick={() => { void mutate("DELETE", deleting.id); }}>{busy ? "正在删除…" : "确认删除"}</ManagementButton></>}><p className="infra-break">{deleting.type} · {deleting.name}</p><p className="infra-muted infra-break">{deleting.content}</p></ManagementModal>}
+    <footer className="infra-related-links" aria-label="DNS 相关链接"><a href="https://dash.cloudflare.com/" target="_blank" rel="noreferrer">Cloudflare 控制台 ↗</a><a href="https://developers.cloudflare.com/dns/" target="_blank" rel="noreferrer">DNS 文档 ↗</a><a href="https://www.cloudflarestatus.com/" target="_blank" rel="noreferrer">服务状态 ↗</a></footer>
   </section>;
 }

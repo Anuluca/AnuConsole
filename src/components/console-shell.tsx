@@ -120,7 +120,7 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
           <div className="route-header">
             <nav className="breadcrumb" aria-label="面包屑"><span>{project.title}</span><span aria-hidden="true">/</span>{group && <><span>{group.label}</span><span aria-hidden="true">/</span></>}<span aria-current="page">{current.label}</span></nav>
             <div className="page-heading">
-              <h1>{current.label}</h1>
+              <div className="route-title"><h1>{current.label}</h1>{current.subtitle && <span className="route-subtitle">{current.subtitle}</span>}</div>
               <div id="route-heading-status" className="route-heading-status" />
             </div>
           </div>

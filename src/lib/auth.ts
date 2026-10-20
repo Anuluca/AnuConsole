@@ -55,13 +55,13 @@ export async function requireAdmin() {
   return user;
 }
 
-export async function createUserSession(username: "admin" | "viewer") {
-  const account = getAccount(username);
+export async function createUserSession(username: "admin" | "user" | "guest") {
+  const account = getAccount(username === "guest" ? "admin" : username);
   if (!account) throw new Error("账号未配置");
   const session = await getSession();
-  session.username = account.username;
+  session.username = username;
   session.expiresAt = Date.now() + SESSION_TTL * 1000;
   // 修改密码后旧会话即失效，无需等待原 Cookie 到期。
-  session.credentialVersion = accountVersion(account);
+  session.credentialVersion = username === "guest" ? `guest:${accountVersion(account)}` : accountVersion(account);
   await session.save();
 }

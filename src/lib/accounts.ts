@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { verifyPassword } from "./security.ts";
 
-export type UserIdentity = { username: "admin" | "viewer"; role: "admin" | "viewer" };
+export type UserIdentity = { username: "admin" | "user" | "guest"; role: "admin" | "viewer" };
 type Credentials = Record<string, string | undefined>;
 type Account = UserIdentity & { passwordHash: string };
 export type UserSession = { username?: string; expiresAt?: number; credentialVersion?: string };
@@ -11,9 +11,11 @@ export function validPasswordHash(value: string | undefined): value is string {
 }
 
 export function getAccount(username: unknown, credentials: Credentials = process.env): Account | null {
-  if (username !== "admin" && username !== "viewer") return null;
+  if (username !== "admin" && username !== "user") return null;
   const passwordHash = username === "admin" ? credentials.ADMIN_PASSWORD_HASH : credentials.VIEWER_PASSWORD_HASH;
-  return validPasswordHash(passwordHash) ? { username, role: username, passwordHash } : null;
+  return validPasswordHash(passwordHash)
+    ? { username, role: username === "admin" ? "admin" : "viewer", passwordHash }
+    : null;
 }
 
 export function accountVersion(account: Account): string {
@@ -21,6 +23,13 @@ export function accountVersion(account: Account): string {
 }
 
 export function sessionIdentity(session: UserSession, credentials: Credentials = process.env, now = Date.now()): UserIdentity | null {
+  // 游客只能从服务端签发的有效会话恢复，并固定为只读；管理员凭据轮换后同步失效。
+  if (session.username === "guest") {
+    const admin = getAccount("admin", credentials);
+    return admin && Number.isFinite(session.expiresAt) && (session.expiresAt ?? 0) > now &&
+      session.credentialVersion === `guest:${accountVersion(admin)}`
+      ? { username: "guest", role: "viewer" } : null;
+  }
   const account = getAccount(session.username, credentials);
   if (!account || !Number.isFinite(session.expiresAt) || (session.expiresAt ?? 0) <= now ||
     session.credentialVersion !== accountVersion(account)) return null;

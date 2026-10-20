@@ -11,41 +11,47 @@ npm install
 npm run dev
 ```
 
-打开 [http://127.0.0.1:3002](http://127.0.0.1:3002)。管理员账号为 `admin`，可选只读账号为 `viewer`，密码通过交互式命令设置。当前机器已配置 `.env.local` 时跳过管理员初始化。开发服务默认由用户启动并保持运行，助手仅复用该服务。
+打开 [http://127.0.0.1:3002](http://127.0.0.1:3002)。管理员账号为 `admin`，可选只读账号为 `user`，密码通过交互式命令设置。当前机器已配置 `.env.local` 时跳过管理员初始化。开发服务默认由用户启动并保持运行，助手仅复用该服务。
+
+开发服务监听 `0.0.0.0:3002`，同一局域网的设备可通过 `http://<本机局域网 IP>:3002` 访问。修改监听地址后需手动重启开发服务才能生效。
+
+`next.config.ts` 的 `allowedDevOrigins` 自动包含 `127.0.0.1` 和本机网卡的 IPv4 地址，允许开发热更新 WebSocket 正常连接。仅修改监听地址而未允许访问来源，可能导致 React 水合等待开发调试通道，表现为页面显示但按钮无法响应。网卡 IP 变化后重启开发服务以重新读取地址。
 
 `npm run dev` 的开发环境可直接访问业务页面，无需登录或配置管理员。生产环境 `npm run build` / `npm run start` 仍需配置管理员并登录。开发环境保留 `/login` 供预览登录界面。
 
 | 路由 | 页面 | 访问权限 |
 | --- | --- | --- |
 | `/login` | 账号登录 | 公开，已登录时跳转首页 |
-| `/` | 跳转到 Anutrium 首页 | 开发免登录，生产 admin / viewer |
-| `/anutrium`、`/anutrium/about` | Anutrium 首页、关于 | 开发免登录，生产 admin / viewer |
-| `/anutrium/monitor/ga4` | Anutrium 监视器 → GA4浏览量 | 开发免登录，生产 admin / viewer |
-| `/anutrium/features`、`/anutrium/data` | Anutrium 功能调整、数据维护 | admin 可修改，viewer 只读 |
-| `/drrr`、`/drrr/about` | DRRR情报屋首页、关于 | 开发免登录，生产 admin / viewer |
+| `/` | 跳转到 Anutrium 首页 | 开发免登录，生产 admin / user / guest |
+| `/anutrium`、`/anutrium/about` | Anutrium 首页、关于 | 开发免登录，生产 admin / user / guest |
+| `/anutrium/monitor/ga4` | Anutrium 监视器 → GA4浏览量 | 开发免登录，生产 admin / user / guest |
+| `/anutrium/features`、`/anutrium/data` | Anutrium 功能调整、数据维护 | admin 可修改，user / guest 只读 |
+| `/drrr`、`/drrr/about` | DRRR情报屋首页、关于 | 开发免登录，生产 admin / user / guest |
 
 Anutrium 首页展示四项浏览量概览指标、实时活跃用户、每日趋势和路卡雕像的头疼模式开关；概览和趋势固定读取今天，不显示时间范围切换、更多指标、更新时间栏和分类报表。读取和轮询策略与监视器一致，开关权限及计数与功能调整页一致。其他项目首页及数据维护页保持空内容区；关于页介绍当前项目与控制台职能，并链接到 [AnuConsole GitHub 仓库](https://github.com/Anuluca/AnuConsole)。监视器接入网站既有 GA4 聚合报表。项目菜单与颜色在 `src/lib/projects.ts` 配置，页面 URL 包含项目名；旧业务地址不保留。
 
-界面字体使用 Adobe Typekit 项目 `vjg4wuk` 的 `alibaba-puhuiti`。右上角可选择自动、浅色或深色主题，默认按浏览器本地时间 07:00–19:00 显示浅色，其余时间显示深色；偏好保存在当前浏览器中。路由内容切换时快速闪烁两下，启用减少动态效果时关闭动画。Next.js 开发指示器已禁用。
+界面正文使用系统字体（Arial、PingFang SC、Microsoft YaHei），无需第三方字体加载服务。右上角可选择自动、浅色或深色主题，默认按浏览器本地时间 07:00–19:00 显示浅色，其余时间显示深色；偏好保存在当前浏览器中。路由内容切换时快速闪烁两下，启用减少动态效果时关闭动画。Next.js 开发指示器已禁用。
 
-登录标题 `DRIVEN BY CONSOLE.` 使用 R2 上的 Anton 字体，品牌标题及副标题使用 R2 上的 UnboundedSans。除右下角版权外，界面文字统一为 900 字重。登录页最大宽度 1360px，左侧为无卡片的自动代码输入动画，登录按钮紧凑且右对齐。主题下拉支持键盘操作与外部点击关闭；退出确认框使用柔和阴影与入场、退场动画。登录页与后台间有淡入过渡，菜单与面包屑均使用中文。
+登录标题 `DRIVEN BY CONSOLE.` 使用 R2 上的 Anton 字体，品牌标题及副标题使用 R2 上的 UnboundedSans。除右下角版权外，界面文字统一为 900 字重。登录页最大宽度 1360px，左侧为无卡片的自动代码输入动画，登录按钮紧凑且右对齐。主题下拉支持键盘操作与外部点击关闭；退出确认框使用柔和阴影与入场、退场动画。全站不自动聚焦控件、标题或容器，弹窗关闭后也不自动恢复焦点；使用 Tab 手动选择控件。登录页与后台间有淡入过渡，菜单与面包屑均使用中文。
 
 ## 身份认证 (Authentication)
 
 - 密码使用随机盐与 scrypt 保存为哈希，不向客户端暴露；环境文件已被 `.gitignore` 排除。
 - iron-session 加密会话保存在 `HttpOnly`、`SameSite=Strict` Cookie 中，有效期 8 小时；生产环境启用 `Secure`。
-- 布局、业务页面和读取接口调用 `requireUser()`；业务写入必须调用 `requireAdmin()`。viewer 可以查看统计、页面和开关状态，但开关禁用，直接写接口返回 403；角色始终由服务端账号配置确定。
+- 布局、业务页面和读取接口调用 `requireUser()`；业务写入必须调用 `requireAdmin()`。user 与游客 guest 可以查看统计、页面和开关状态，但开关禁用，直接写接口返回 403；角色始终由服务端账号配置确定。
 - 登录、退出使用 Next.js Server Actions，保留框架自带的来源检查；不开放跨源登录接口。
-- 每个服务进程一分钟最多接受 10 次登录尝试。多实例部署前应使用共享限流存储或在反向代理配置限流。
+- 每个服务进程一分钟最多接受 10 次密码登录尝试。多实例部署前应使用共享限流存储或在反向代理配置限流。
 - 修改密码执行 `npm run setup:admin -- --force`，然后重启服务；会同时轮换会话密钥，使已有会话失效。退出会清除当前浏览器 Cookie。
 
-### 只读账号 viewer
+登录页默认选择“游客”，点击“游客访问”即可建立 8 小时有效的只读会话，无需账号密码或 `VIEWER_PASSWORD_HASH`。游客可以查看所有受保护的业务页面和读取接口，所有业务写入返回 403；服务端仍需配置管理员与会话密钥。切换“管理员”标签后使用账号密码登录。原 `user` 密码登录继续兼容。
 
-在项目根目录运行 `npm run setup:viewer`，按终端提示输入并确认独立密码。脚本仅向 `.env.local` 添加 `VIEWER_PASSWORD_HASH`，不会覆盖管理员、会话密钥和其他配置，不显示明文密码。未配置该哈希时 viewer 不能登录。
+### 只读账号 user
 
-Netlify 上线时，再将 `.env.local` 中的 `VIEWER_PASSWORD_HASH` 同步到该项目的私密环境变量，勾选 Contains secret values，作用域包含 Functions，然后重新部署。登录账号填写 `viewer`，密码填写刚才设置的明文密码，不是哈希。
+在项目根目录运行 `npm run setup:viewer`，按终端提示输入并确认独立密码。脚本仅向 `.env.local` 添加 `VIEWER_PASSWORD_HASH`，不会覆盖管理员、会话密钥和其他配置，不显示明文密码。未配置该哈希时 user 不能登录。
 
-重置只读密码运行 `npm run setup:viewer -- --force`，只会使旧 viewer 会话失效；移除 `VIEWER_PASSWORD_HASH` 则禁用该账号。管理员密码重置仍会轮换共享会话密钥，使所有已有会话失效；脚本保留只读账号和业务密钥。开发环境匿名免登录保留，但已登录的 viewer 不会因此获得写权限。
+Netlify 上线时，再将 `.env.local` 中的 `VIEWER_PASSWORD_HASH` 同步到该项目的私密环境变量，勾选 Contains secret values，作用域包含 Functions，然后重新部署。登录账号填写 `user`，密码填写刚才设置的明文密码，不是哈希。
+
+重置只读密码运行 `npm run setup:viewer -- --force`，只会使旧 user 会话失效；移除 `VIEWER_PASSWORD_HASH` 则禁用该账号。管理员密码重置仍会轮换共享会话密钥，使所有已有会话失效；脚本保留只读账号和业务密钥。开发环境匿名免登录保留，但已登录的 user 不会因此获得写权限。
 
 ## 检查
 
@@ -63,6 +69,8 @@ unset E2E_ADMIN_PASSWORD
 ```
 
 浏览器测试默认覆盖开发环境免登录、路由切换与几何稳定性、主题切换和指定文案删除；`E2E_AUTH_MODE=production` 额外校验生产环境登录、未登录拦截、会话保持与退出。
+
+`tests/responsive-reload.spec.ts` 额外验证直达、连续刷新及路由切换后的布局一致性，并由 `mobile-safari` 项目使用 WebKit 执行。首次运行需安装该浏览器：`npx playwright install webkit`。WebKit 回归用于补充 Chromium 手机模拟，不能替代真实 iPhone Safari 验证。
 
 ## 部署
 

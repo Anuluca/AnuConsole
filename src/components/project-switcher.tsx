@@ -8,7 +8,6 @@ import { projects, type ProjectId } from "@/lib/projects";
 export function ProjectSwitcher({ current, mobile }: { current: ProjectId; mobile: boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
   const menuId = useId();
   const project = projects.find(item => item.id === current)!;
 
@@ -26,10 +25,9 @@ export function ProjectSwitcher({ current, mobile }: { current: ProjectId; mobil
     if (event.key === "Escape" && open && mobile) {
       event.preventDefault();
       setOpen(false);
-      trigger.current?.focus();
     }
   }}>
-    <button ref={trigger} className="project-current" type="button" aria-label={`当前项目：${project.title}，切换项目`}
+    <button className="project-current" type="button" aria-label={`当前项目：${project.title}，切换项目`}
       aria-expanded={open} aria-controls={open ? menuId : undefined} onClick={() => setOpen(value => !value)}>
       <span>{project.title}</span>
       <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m5 3 5 5-5 5" stroke="currentColor" strokeWidth="1.5" /></svg>

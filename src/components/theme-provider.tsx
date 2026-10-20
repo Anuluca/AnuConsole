@@ -71,8 +71,6 @@ export function ThemeSwitch() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const options = useRef<(HTMLButtonElement | null)[]>([]);
   const menuId = useId();
   const selected = themeOptions.findIndex(option => option.value === (mode ?? "auto"));
 
@@ -85,13 +83,15 @@ export function ThemeSwitch() {
     return () => document.removeEventListener("pointerdown", dismiss);
   }, [open]);
 
-  useEffect(() => { if (open) options.current[active]?.focus(); }, [open, active]);
 
   function keyboard(event: KeyboardEvent) {
     if (event.key === "Escape" && open) {
       event.preventDefault();
       setOpen(false);
-      trigger.current?.focus();
+    } else if (open && ["Enter", " "].includes(event.key)) {
+      event.preventDefault();
+      changeMode(themeOptions[active].value);
+      setOpen(false);
     } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
       event.preventDefault();
       setActive(event.key === "Home" ? 0 : event.key === "End" ? 2 : !open ? selected : (active + (event.key === "ArrowDown" ? 1 : 2)) % 3);
@@ -102,15 +102,15 @@ export function ThemeSwitch() {
   return <div className="theme-switch" ref={root} onKeyDown={keyboard} onBlurCapture={event => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
   }}>
-    <button ref={trigger} className="theme-trigger" type="button" aria-label="显示主题" aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined}
+    <button className="theme-trigger" type="button" aria-label="显示主题" aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-activedescendant={open ? `${menuId}-${active}` : undefined}
       disabled={mode === null} title="自动模式：本地时间 07:00–19:00 为浅色，其余时间为深色"
       onClick={() => { setActive(selected); setOpen(!open); }}>
       <ThemeIcon mode={mode ?? "auto"} /><span>{themeOptions[selected].label}</span>
       <svg className="theme-chevron" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" /></svg>
     </button>
     {open && <div id={menuId} role="listbox" aria-label="主题选项" className="theme-menu">
-      {themeOptions.map((option, index) => <button key={option.value} ref={element => { options.current[index] = element; }} type="button" role="option" aria-selected={option.value === mode}
-        tabIndex={active === index ? 0 : -1} className="theme-option" onClick={() => { changeMode(option.value); setOpen(false); trigger.current?.focus(); }}>
+      {themeOptions.map((option, index) => <button key={option.value} id={`${menuId}-${index}`} data-highlighted={active === index} type="button" role="option" aria-selected={option.value === mode}
+        tabIndex={active === index ? 0 : -1} className="theme-option" onClick={() => { changeMode(option.value); setOpen(false); }}>
         <ThemeIcon mode={option.value} /><span>{option.label}</span>
         {mode === option.value && <svg className="theme-check" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3 8 3 3 7-7" stroke="currentColor" strokeWidth="1.5" /></svg>}
       </button>)}

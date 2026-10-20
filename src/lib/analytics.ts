@@ -43,7 +43,7 @@ export const OVERVIEW_METRICS = Object.keys(METRICS).filter(key => !["eventCount
 export const REPORTS: Record<string, { title: string; dimension: string }> = {
   pages: { title: "页面浏览", dimension: "页面" }, landing: { title: "入口页面", dimension: "页面" },
   channels: { title: "访问渠道", dimension: "渠道" }, sources: { title: "来源与媒介", dimension: "来源 / 媒介" },
-  firstSources: { title: "首次访问来源", dimension: "来源 / 媒介" }, campaigns: { title: "推广活动", dimension: "活动" },
+  campaigns: { title: "推广活动", dimension: "活动" },
   countries: { title: "国家与地区", dimension: "国家 / 地区" }, regions: { title: "地区分布", dimension: "地区" },
   cities: { title: "城市分布", dimension: "城市" }, devices: { title: "设备类型", dimension: "设备" },
   browsers: { title: "浏览器", dimension: "浏览器" }, systems: { title: "操作系统", dimension: "系统" },

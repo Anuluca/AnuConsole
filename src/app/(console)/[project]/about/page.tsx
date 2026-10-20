@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getProject } from "@/lib/projects";
+import { Brand } from "@/components/brand";
 
 export const metadata = { title: "关于" };
 
@@ -16,8 +17,7 @@ export default async function AboutPage({ params }: { params: Promise<{ project:
 
   return <section className="about-page" aria-label="关于内容区">
     <div className="about-intro">
-      <span className="eyebrow">多项目管理后台</span>
-      <h2>AnuConsole</h2>
+      <h2><Brand href={`/${project.id}`} subtitle="PROJECT BACKEND" /></h2>
       <p>AnuConsole 是 Anutrium 等多个项目的管理后台。</p>
       <div className="about-contact">
         <span>开发者：Anuluca</span>

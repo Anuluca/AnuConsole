@@ -23,6 +23,13 @@ export async function login(_state: LoginState, form: FormData): Promise<LoginSt
   redirect("/");
 }
 
+// 游客入口不读取客户端提交的账号或角色，也不占用管理员密码尝试额度。
+export async function guestLogin(_state: LoginState, _form: FormData): Promise<LoginState> {
+  if (!authConfigured()) return { error: "管理员尚未配置，请先在服务端运行 npm run setup:admin。" };
+  await createUserSession("guest");
+  redirect("/");
+}
+
 export async function logout() {
   if (authConfigured()) (await getSession()).destroy();
   redirect("/login");

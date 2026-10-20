@@ -10,17 +10,17 @@ test("两个账号使用独立密码，未配置的只读账号无法登录", as
   const viewerPassword = randomBytes(18).toString("hex");
   const credentials = { ADMIN_PASSWORD_HASH: await hashPassword(adminPassword), VIEWER_PASSWORD_HASH: await hashPassword(viewerPassword) };
   assert.deepEqual(await authenticateAccount("admin", adminPassword, credentials), { username: "admin", role: "admin" });
-  assert.deepEqual(await authenticateAccount("viewer", viewerPassword, credentials), { username: "viewer", role: "viewer" });
-  assert.equal(await authenticateAccount("viewer", adminPassword, credentials), null);
+  assert.deepEqual(await authenticateAccount("user", viewerPassword, credentials), { username: "user", role: "viewer" });
+  assert.equal(await authenticateAccount("user", adminPassword, credentials), null);
   assert.equal(await authenticateAccount("unknown", adminPassword, credentials), null);
-  assert.equal(await authenticateAccount("viewer", viewerPassword, { ADMIN_PASSWORD_HASH: credentials.ADMIN_PASSWORD_HASH }), null);
+  assert.equal(await authenticateAccount("user", viewerPassword, { ADMIN_PASSWORD_HASH: credentials.ADMIN_PASSWORD_HASH }), null);
 });
 
 test("权限从账号配置推导，过期、密码变更和禁用账号使会话失效", async () => {
   const credentials = { VIEWER_PASSWORD_HASH: await hashPassword(randomBytes(18).toString("hex")) };
-  const viewer = getAccount("viewer", credentials)!;
-  const session = { username: "viewer", expiresAt: 2000, credentialVersion: accountVersion(viewer), role: "admin" };
-  assert.deepEqual(sessionIdentity(session, credentials, 1000), { username: "viewer", role: "viewer" });
+  const viewer = getAccount("user", credentials)!;
+  const session = { username: "user", expiresAt: 2000, credentialVersion: accountVersion(viewer), role: "admin" };
+  assert.deepEqual(sessionIdentity(session, credentials, 1000), { username: "user", role: "viewer" });
   assert.equal(sessionIdentity(session, credentials, 2000), null);
   assert.equal(sessionIdentity(session, {}, 1000), null);
   assert.equal(sessionIdentity({ ...session, expiresAt: Infinity }, credentials, 1000), null);

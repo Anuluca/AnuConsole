@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test("自定义主题下拉、键盘操作、自动时间与偏好保持", async ({ page }, testInfo) => {
   await page.clock.install({ time: new Date("2026-10-17T06:59:58+08:00") });
+  // 冻结首屏时间，避免字体加载/开发编译跨过 07:00 导致边界断言不稳定。
+  await page.clock.pauseAt(new Date("2026-10-17T06:59:58+08:00"));
   await page.goto("/login");
   const trigger = page.getByRole("button", { name: "显示主题", exact: true });
   const choose = async (label: string) => {
@@ -25,7 +27,8 @@ test("自定义主题下拉、键盘操作、自动时间与偏好保持", async
   await page.screenshot({ path: testInfo.outputPath("login-light.png"), fullPage: true });
   await trigger.press("ArrowDown");
   await page.keyboard.press("End");
-  await expect(page.getByRole("option", { name: "深色", exact: true })).toBeFocused();
+  await expect(page.getByRole("option", { name: "深色", exact: true })).toHaveAttribute("data-highlighted", "true");
+  await expect(trigger).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.screenshot({ path: testInfo.outputPath("login-dark.png"), fullPage: true });
@@ -47,12 +50,13 @@ test("自定义主题下拉、键盘操作、自动时间与偏好保持", async
   await expect(page.locator(".brand-wordmark")).toHaveCSS("font-family", /UnboundedSans/);
   await expect(page.locator(".brand-wordmark > span")).toHaveCSS("font-family", /UnboundedSans/);
   await expect(page.locator(".login-title")).toHaveCSS("font-weight", "900");
+  await page.getByRole("tab", { name: "管理员", exact: true }).click();
   await expect(page.getByLabel("登录账号")).toHaveCSS("font-weight", "900");
   await expect(page.locator(".login-footer span")).toHaveCSS("font-weight", "400");
   await expect(page.locator(".login-footer")).toHaveCSS("font-size", testInfo.project.name === "mobile" ? "11px" : "12px");
   const buttonBox = await page.getByRole("button", { name: "登录", exact: true }).boundingBox();
-  const formBox = await page.locator(".login-form").boundingBox();
-  expect(buttonBox!.width).toBeLessThan(formBox!.width * .8);
+  const formBox = await page.locator("#login-panel-admin .login-form").boundingBox();
+  expect(buttonBox!.width).toBeCloseTo(formBox!.width, 0);
   expect(Math.abs(buttonBox!.x + buttonBox!.width - formBox!.x - formBox!.width)).toBeLessThanOrEqual(1);
   await expect(page.locator("body")).not.toContainText(/Your site|Your system|CONTROL CENTER|FOR ANUTRIUM|WORKSPACE|ADMINISTRATION|ADMIN ACCESS|X: 0234|Y: 0056|01 — 03|登录 AnuConsole|USERNAME|PASSWORD|仅限授权管理员访问|登录控制台|\{ ANUCONSOLE \}/);
   await expect(page.getByLabel("登录账号", { exact: true })).toBeVisible();

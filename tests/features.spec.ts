@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  // 开关测试不依赖真实平台连接，双连接标识由 layout-audit.spec.ts 单独覆盖。
+  await page.route("**/api/infrastructure/connections", route => route.fulfill({ json: { cloudflare: false, netlify: false } }));
+});
+
 test("首页开关读取真实状态、保存成功后更新，失败后重新读取", async ({ page }) => {
   test.skip(process.env.E2E_AUTH_MODE === "production", "生产身份验证由认证回归覆盖");
   let enabled = true;
@@ -63,7 +68,7 @@ test("读取失败不冒充关闭状态，重试后可操作", async ({ page }) 
   failed = false;
   await page.getByRole("button", { name: "重试" }).click();
   await expect(page.getByRole("switch")).toBeEnabled();
-  await expect(page.getByRole("status")).toHaveText("已关闭");
+  await expect(page.locator(".feature-control").getByRole("status")).toHaveText("已关闭");
 });
 
 test("写入接口拒绝跨站请求和无效参数", async ({ request }) => {

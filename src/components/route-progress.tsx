@@ -3,7 +3,9 @@
 import Link, { useLinkStatus } from "next/link";
 import { createContext, useCallback, useContext, useEffect, useId, useState, type ComponentProps, type ReactNode } from "react";
 
-const ProgressContext = createContext({ pending: false, update: (_id: string, _pending: boolean) => {} });
+// 链接只订阅稳定的上报函数；进度变化不再使所有导航链接一起重渲染。
+const ProgressUpdateContext = createContext((_id: string, _pending: boolean) => {});
+const ProgressPendingContext = createContext(false);
 
 export function RouteProgressProvider({ children }: { children: ReactNode }) {
   const [links, setLinks] = useState<Set<string>>(() => new Set());
@@ -15,12 +17,14 @@ export function RouteProgressProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
-  return <ProgressContext.Provider value={{ pending: links.size > 0, update }}>{children}</ProgressContext.Provider>;
+  return <ProgressUpdateContext.Provider value={update}>
+    <ProgressPendingContext.Provider value={links.size > 0}>{children}</ProgressPendingContext.Provider>
+  </ProgressUpdateContext.Provider>;
 }
 
 function PendingLink() {
   const { pending } = useLinkStatus();
-  const { update } = useContext(ProgressContext);
+  const update = useContext(ProgressUpdateContext);
   const id = useId();
   // 跟随 Next.js 的真实导航状态；取消导航或链接卸载时同时释放状态。
   useEffect(() => {
@@ -35,7 +39,7 @@ export function ProgressLink({ children, ...props }: ComponentProps<typeof Link>
 }
 
 export function RouteProgress() {
-  const { pending } = useContext(ProgressContext);
+  const pending = useContext(ProgressPendingContext);
   const [phase, setPhase] = useState<"idle" | "loading" | "complete">("idle");
   useEffect(() => {
     if (pending) setPhase("loading");

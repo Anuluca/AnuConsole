@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { openDialog, closeDialog } from "@/lib/dialog";
 import { logout } from "@/app/actions";
 
 type Phase = "closed" | "entering" | "open" | "leaving";
@@ -30,7 +31,7 @@ export function LogoutButton() {
       motion.current = animation;
       await animation.finished.catch(() => {});
     }
-    element.close();
+    closeDialog(element);
     setOpen(false);
     setPhase("closed");
     closing.current = false;
@@ -42,7 +43,7 @@ export function LogoutButton() {
   useEffect(() => {
     const element = dialog.current;
     if (!open || !element) return;
-    if (!element.open) element.showModal();
+    if (!element.open) openDialog(element);
     closing.current = false;
     setPhase("entering");
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -66,7 +67,7 @@ export function LogoutButton() {
       <h2 id={headingId}>退出登录？</h2>
       <p id={descriptionId}>退出后将返回登录页。</p>
       <form action={action} className="confirm-actions">
-        <button className="button-secondary" type="button" autoFocus disabled={busy} onClick={() => { void dismiss(); }}>取消</button>
+        <button className="button-secondary" type="button" disabled={busy} onClick={() => { void dismiss(); }}>取消</button>
         <button className="button-primary" type="submit" disabled={busy}>{pending ? "正在退出…" : "确认退出"}</button>
       </form>
     </dialog>

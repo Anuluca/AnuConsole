@@ -1,6 +1,7 @@
 "use client";
 
 import { ProgressLink as Link } from "./route-progress";
+import { openDialog, closeDialog } from "@/lib/dialog";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePathname } from "next/navigation";
@@ -13,7 +14,7 @@ import { ProjectSwitcher } from "./project-switcher";
 import { projectFromPath, type RouteItem } from "@/lib/projects";
 import type { UserIdentity } from "@/lib/accounts";
 
-export function ConsoleShell({ children, user, developmentMode = false }: { children: React.ReactNode; user: UserIdentity; developmentMode?: boolean }) {
+export function ConsoleShell({ children, user }: { children: React.ReactNode; user: UserIdentity }) {
   const pathname = usePathname();
   const project = projectFromPath(pathname);
   const routes = project.routes;
@@ -30,7 +31,7 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
     if (!element || element.open) return;
     menuMotion.current?.cancel();
     menuClosing.current = false;
-    element.showModal();
+    openDialog(element);
     setMenuOpen(true);
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       menuMotion.current = element.animate([{ opacity: 0 }, { opacity: 1 }], {
@@ -53,7 +54,7 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
       menuMotion.current = animation;
       await animation.finished.catch(() => {});
     }
-    element.close();
+    closeDialog(element);
     menuMotion.current?.cancel();
     menuClosing.current = false;
     setMenuOpen(false);
@@ -62,7 +63,7 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
     const query = window.matchMedia("(max-width: 700px)");
     const sync = () => {
       setMobile(query.matches);
-      if (!query.matches) { menu.current?.close(); setMenuOpen(false); }
+      if (!query.matches) { if (menu.current?.open) closeDialog(menu.current); setMenuOpen(false); }
     };
     sync();
     query.addEventListener("change", sync);
@@ -70,7 +71,14 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
   }, []);
   const group = routes.find(route => route.children?.some(child => child.href === pathname));
   const current = group?.children?.find(route => route.href === pathname) ?? routes.find(route => route.href === pathname) ?? routes[0];
-  const renderLink = (route: RouteItem, child = false) => <Link key={route.href} href={route.href} onClick={() => { void closeMenu(); }} aria-current={pathname === route.href ? "page" : undefined} className={`nav-item${child ? " nav-child" : ""}${pathname === route.href ? " active" : ""}`}>
+  const subtitle = current.subtitle;
+  const subtitleHasBrackets = !!subtitle && subtitle.startsWith("（") && subtitle.endsWith("）");
+  const subtitleText = subtitleHasBrackets ? subtitle!.slice(1, -1) : subtitle;
+  const renderLink = (route: RouteItem, child = false) => <Link key={route.href} href={route.href} onClick={event => {
+    // 当前菜单不是路由切换；避免重复发起同页导航与后续点击竞争。
+    if (pathname === route.href && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) event.preventDefault();
+    void closeMenu();
+  }} aria-current={pathname === route.href ? "page" : undefined} className={`nav-item${child ? " nav-child" : ""}${pathname === route.href ? " active" : ""}`}>
     <MenuIcon route={route.key} />
     <span className="nav-label">{route.label}</span>
   </Link>;
@@ -100,16 +108,23 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
       <div className="topbar-right">
         {project.siteUrl && <a className="site-link" href={project.siteUrl} target="_blank" rel="noreferrer">访问 {project.title} <Arrow diagonal /></a>}
         {!mobile && <ThemeSwitch />}
-        {(!developmentMode || user.role === "viewer") && <span className="account"><span className="status-dot" />{user.username}<span className="account-role">{user.role === "admin" ? "管理员" : "只读用户"}</span></span>}
-        <LogoutButton />
+        <span className="account"><span className="status-dot" />{user.username}<span className="account-role">{user.role === "admin" ? "管理员" : "只读用户"}</span></span>
+        {!mobile && <LogoutButton />}
         <button className="mobile-menu-trigger" type="button" aria-label="打开菜单" aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={openMenu}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
       </div>
     </header>
-    <dialog id="mobile-navigation" className="mobile-menu" aria-labelledby="mobile-navigation-title" ref={menu} onCancel={event => { event.preventDefault(); void closeMenu(); }} onClose={() => setMenuOpen(false)}>
-      <div className="mobile-menu-header"><h2 id="mobile-navigation-title">菜单</h2><button className="mobile-menu-close" type="button" aria-label="关闭菜单" onClick={() => { void closeMenu(); }}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19" /></svg></button></div>
+    <dialog id="mobile-navigation" className="mobile-menu" aria-labelledby="mobile-navigation-title" ref={menu}
+      onCancel={event => {
+        // 退出确认框嵌在菜单中，只处理菜单自身的事件，避免 Escape 同时关闭两层。
+        if (event.target !== event.currentTarget) return;
+        event.preventDefault();
+        void closeMenu();
+      }} onClose={event => { if (event.target === event.currentTarget) setMenuOpen(false); }}>
+      <div className="mobile-menu-header"><h2 id="mobile-navigation-title">菜单</h2><button className="mobile-menu-close" type="button" aria-label="关闭菜单" onClick={() => { void closeMenu(); }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19" /></svg></button></div>
       {mobile && navigation}
+      {mobile && <div className="mobile-menu-footer"><LogoutButton /></div>}
     </dialog>
     <div className="console-body">
       <aside className="sidebar">
@@ -120,7 +135,7 @@ export function ConsoleShell({ children, user, developmentMode = false }: { chil
           <div className="route-header">
             <nav className="breadcrumb" aria-label="面包屑"><span>{project.title}</span><span aria-hidden="true">/</span>{group && <><span>{group.label}</span><span aria-hidden="true">/</span></>}<span aria-current="page">{current.label}</span></nav>
             <div className="page-heading">
-              <div className="route-title"><h1>{current.label}</h1>{current.subtitle && <span className="route-subtitle">{current.subtitle}</span>}</div>
+              <div className="route-title"><h1>{current.label}</h1>{subtitle && <span className="route-subtitle" aria-label={subtitle}>{subtitleHasBrackets && <span className="route-subtitle-bracket" aria-hidden="true">（</span>}<span aria-hidden="true">{subtitleText}</span>{subtitleHasBrackets && <span className="route-subtitle-bracket" aria-hidden="true">）</span>}</span>}</div>
               <div id="route-heading-status" className="route-heading-status" />
             </div>
           </div>

@@ -53,9 +53,9 @@ test("项目地址决定菜单、主题色和可访问的业务路由", async ({
   await page.getByRole("option", { name: "深色", exact: true }).click();
   await expect(page.getByRole("button", { name: /当前项目：DRRR情报屋/ })).toHaveCSS("color", "rgb(244, 245, 0)");
   await expect(page.locator(".console")).toHaveCSS("--on-accent", "#17191b");
-  await expect(page.locator(".project-current")).toHaveCSS("font-family", /alibaba-puhuiti/);
+  await expect(page.locator(".project-current")).toHaveCSS("font-family", /Arial/);
   await expect(page.locator(".project-switcher")).toHaveCSS("border-left-color", /\/ 0\.6\)/);
-  await expect(page.locator(".site-link")).toHaveAttribute("href", "https://drrr.anuluca.com");
+  await expect(page.locator(".site-link:visible")).toHaveAttribute("href", "https://drrr.anuluca.com");
   await expect((await openNavigation(page)).getByRole("link")).toHaveText(["首页", "域名解析", "项目部署", "关于"]);
   if (testInfo.project.name === "mobile") await expect(choices).toHaveCount(0);
   else await expect(choices).toBeVisible();

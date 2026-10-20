@@ -1,3 +1,4 @@
+import { openLogoutConfirmation } from "./helpers/navigation";
 import { test, expect } from "@playwright/test";
 import { loginCode } from "../src/lib/login-code";
 
@@ -19,8 +20,9 @@ test("确认框柔和阴影与进出场动画", async ({ page }) => {
   await page.goto("/anutrium/data");
   const dialog = page.getByRole("alertdialog");
   const main = await page.locator(".main-content").boundingBox();
-  await page.getByRole("button", { name: "退出", exact: true }).click();
+  await openLogoutConfirmation(page);
   await expect(dialog).toBeVisible();
+  await expect(page.locator("body")).toBeFocused();
   await expect(dialog).toHaveAttribute("data-phase", "open");
   await expect(dialog.locator("h2")).toHaveCSS("font-weight", "900");
   const shadow = await dialog.evaluate(element => getComputedStyle(element).boxShadow);
@@ -32,9 +34,9 @@ test("确认框柔和阴影与进出场动画", async ({ page }) => {
   expect(Math.abs(after!.x - main!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(after!.y - main!.y)).toBeLessThanOrEqual(1);
   await expect(page).toHaveURL("/anutrium/data");
-  await page.getByRole("button", { name: "退出", exact: true }).click();
+  await openLogoutConfirmation(page);
   await expect(dialog).toHaveAttribute("data-phase", "open");
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "退出", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "退出", exact: true })).not.toBeFocused();
 });

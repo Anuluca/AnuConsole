@@ -1,0 +1,56 @@
+.flora-likes-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; min-width: 0; }
+.flora-likes-panel > .feature-module:nth-child(3) { grid-column: 1 / -1; }
+.flora-likes-panel .feature-module { width: 100%; min-width: 0; }
+.flora-likes-panel .feature-module h2 { display: flex; align-items: center; gap: 8px; }
+.flora-likes-body { display: grid; min-width: 0; gap: 16px; padding: 20px 22px; }
+.flora-likes-body p { margin: 0; color: var(--muted); line-height: 1.7; }
+.flora-likes-form { --flora-control-height: 48px; display: flex; align-items: end; gap: 20px; }
+.flora-like-editors { display: grid; flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.flora-like-editors label { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.flora-like-editors input { width: 100%; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 0; background: var(--glass-inset); color: inherit; font: inherit; }
+/* 输入框与保存按钮共用边框盒高度，不依赖横排父容器拉伸，手机纵排保持相同尺寸。 */
+.flora-like-editors input, .flora-likes-form .infra-action-button { box-sizing: border-box; height: var(--flora-control-height); min-height: var(--flora-control-height); }
+.flora-like-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.flora-statistics-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; overflow-x: auto; }
+.flora-statistics-header h2, .flora-statistics-header .flora-like-actions { flex: none; white-space: nowrap; }
+.flora-statistics-header .flora-like-actions { flex-wrap: nowrap; margin-top: 0; }
+.flora-like-actions [aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+.flora-like-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.flora-like-metrics span { display: grid; gap: 8px; }
+.flora-like-metrics b { font-size: 26px; }
+.flora-statistics-details { display: grid; min-width: 0; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 22px; }
+.flora-statistics-details > *, .flora-like-dimensions > section { min-width: 0; }
+.flora-like-dimensions { display: contents; }
+.flora-like-dimensions h4 { display: flex; align-items: center; min-height: 43px; padding: 12px 0; margin: 0; border-bottom: 1px solid var(--line); font-size: 16px; }
+.flora-like-dimensions ul, .flora-like-audit { padding: 0; margin: 0; list-style: none; }
+.flora-like-dimensions li { display: flex; align-items: center; justify-content: space-between; min-height: 43px; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.flora-like-table { min-width: 0; overflow: auto; }
+.flora-like-table table { width: 100%; border-collapse: collapse; text-align: left; }
+.flora-like-table th, .flora-like-table td { padding: 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.flora-like-audit li { display: flex; flex-wrap: wrap; gap: 20px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.flora-likes-body .flora-like-error { color: #e23456; }
+@media (max-width: 700px) {
+  .flora-like-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flora-likes-panel, .flora-statistics-details, .flora-like-editors { grid-template-columns: minmax(0, 1fr); }
+  .flora-likes-panel > .feature-module:nth-child(3) { grid-column: auto; }
+  .flora-likes-form { align-items: stretch; flex-direction: column; }
+  .flora-likes-body { padding: 16px; }
+  .flora-statistics-header { flex-wrap: wrap; gap: 12px; overflow-x: visible; }
+  .flora-statistics-header .flora-like-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 6px; }
+  .flora-statistics-header .infra-action-button { min-width: 0; min-height: 32px; padding: 5px 4px; gap: 4px; font-size: 12px; }
+  .flora-statistics-header .infra-action-button svg { width: 14px; height: 14px; }
+  .flora-like-metrics { gap: 16px; font-size: 12px; }
+  .flora-like-metrics b { font-size: 22px; }
+  /* 表格独占一行，两个维度列表并排；允许内容收缩，不让表格最小宽度撑出卡片。 */
+  .flora-statistics-details { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .flora-like-table { grid-column: 1 / -1; }
+  .flora-like-table table { table-layout: fixed; font-size: 11px; line-height: 1.5; }
+  .flora-like-table th, .flora-like-table td { padding: 8px 4px; white-space: normal; overflow-wrap: anywhere; }
+  .flora-like-table th:first-child { width: 40%; }
+  .flora-like-table td:first-child { white-space: nowrap; }
+  .flora-like-dimensions h4 { min-height: 36px; padding: 8px 0; font-size: 13px; }
+  .flora-like-dimensions li { min-height: 36px; padding: 8px 0; gap: 8px; font-size: 12px; }
+  .flora-like-dimensions li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .flora-like-dimensions li > span:last-child { flex-shrink: 0; }
+  .flora-like-dimensions p, .flora-like-audit { font-size: 12px; }
+}

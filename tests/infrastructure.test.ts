@@ -29,6 +29,7 @@ const dns = await import("../src/app/api/infrastructure/dns/route.ts");
 const record = await import("../src/app/api/infrastructure/dns/[recordId]/route.ts");
 const netlify = await import("../src/app/api/infrastructure/netlify/route.ts");
 const teams = await import("../src/app/api/infrastructure/netlify/accounts/route.ts");
+const connections = await import("../src/app/api/infrastructure/connections/route.ts");
 const repositories = await import("../src/app/api/infrastructure/netlify/repositories/route.ts");
 const site = await import("../src/app/api/infrastructure/netlify/[siteId]/route.ts");
 const deploys = await import("../src/app/api/infrastructure/netlify/[siteId]/deploys/route.ts");
@@ -50,7 +51,7 @@ const base = "https://console.example.invalid";
 function request(path = "/api/infrastructure/dns", method = "GET", body?: unknown, origin = base) {
   return new Request(`${base}${path}`, { method, headers: { Origin: origin, "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
 }
-async function login(username: "admin" | "viewer") {
+async function login(username: "admin" | "user") {
   const account = getAccount(username)!;
   cookies.set("anuconsole_session", await sealData({ username, role: "admin", expiresAt: Date.now() + 60000, credentialVersion: accountVersion(account) }, { password: secret, ttl: auth.SESSION_TTL }));
 }
@@ -64,10 +65,11 @@ after(() => {
   for (const [key, value] of Object.entries(savedEnv)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
 });
 
-test("未登录拒绝读取；viewer 无法直接调用任何运维写接口", async () => {
+test("未登录拒绝读取；user 无法直接调用任何运维写接口", async () => {
   await assert.rejects(() => dns.GET(request()), /REDIRECT:\/login/);
   await assert.rejects(() => netlify.GET(request()), /REDIRECT:\/login/);
-  await login("viewer");
+  await assert.rejects(() => connections.GET(request()), /REDIRECT:\/login/);
+  await login("user");
   const responses = await Promise.all([
     dns.POST(request(undefined, "POST", {})), record.PATCH(request(undefined, "PATCH", {}), dnsContext), record.DELETE(request(undefined, "DELETE"), dnsContext),
     netlify.POST(request(undefined, "POST", {})),
@@ -76,6 +78,18 @@ test("未登录拒绝读取；viewer 无法直接调用任何运维写接口", a
   ]);
   assert.ok(responses.every(response => response.status === 403));
   assert.equal(calls.length, 0);
+});
+
+test("连接状态使用最小分页读取，部分失败独立显示且不返回业务数据", async () => {
+  await login("user");
+  reply = url => url.includes("api.cloudflare.com")
+    ? Response.json({ success: true, result: [] })
+    : Response.json({ error: "private-provider-message" }, { status: 403 });
+  const result = await connections.GET(request());
+  assert.equal(result.status, 200);
+  assert.deepEqual(await result.json(), { cloudflare: true, netlify: false });
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every(call => call.method === "GET" && call.url.endsWith("page=1&per_page=1")));
 });
 
 test("运维写接口拒绝跨站来源、域名越界和畸形配置，均不访问外部平台", async () => {
@@ -117,7 +131,7 @@ test("项目允许列表在服务端生效，项目详情不泄漏令牌、环�
 });
 
 test("环境变量响应不含任意上下文的明文；修改单一上下文不覆盖其他值", async () => {
-  await login("viewer");
+  await login("user");
   reply = url => Response.json(url.includes("/accounts/") ? [{ key: "API_KEY", scopes: ["functions"], is_secret: true, values: [{ id: "value-id", context: "dev", value: "must-never-leak" }, { id: "prod-id", context: "production", value: "must-never-leak" }] }] : { id: siteId, name: "demo", account_id: "account-id" });
   const response = await env.GET(request(), siteContext);
   const body = JSON.stringify(await response.json());
@@ -187,7 +201,7 @@ test("创建项目不绕过允许列表，不向未知团队写入，也拒绝�
 
 test("仓库列表支持私有仓库，GitHub 与 Netlify 凭据隔离且不返回多余平台字段", async () => {
   await assert.rejects(() => repositories.GET(request()), /REDIRECT:\/login/);
-  await login("viewer");
+  await login("user");
   assert.equal((await repositories.GET(request())).status, 503);
   assert.equal(calls.length, 0);
   process.env.GITHUB_API_TOKEN = randomBytes(24).toString("hex");
@@ -223,4 +237,21 @@ test("从仓库选择创建时服务端重读仓库身份，并自动补充已�
   calls = [];
   assert.equal((await netlify.POST(request(undefined, "POST", { ...input, settings: { ...input.settings, repo: { ...input.settings.repo, id: 456 } } }))).status, 400);
   assert.equal(calls.some(call => call.method === "POST"), false);
+});
+
+test("仓库关联索引忽略大小写，重复关联保持首项且不逐仓库读取平台", async () => {
+  await login("user");
+  process.env.GITHUB_API_TOKEN = randomBytes(24).toString("hex");
+  reply = url => url.startsWith("https://api.github.com/") ? Response.json([
+    { id: 1, full_name: "Example/Repo", default_branch: "main", private: true },
+    { id: 2, full_name: "example/unlinked", default_branch: "main", private: false },
+  ]) : Response.json([
+    { id: siteId, build_settings: { provider: "github", repo_path: "example/repo", cmd: "first" } },
+    { id: siteId, build_settings: { provider: "github", repo_path: "EXAMPLE/REPO", cmd: "second" } },
+    { id: "denied-site", build_settings: { provider: "github", repo_path: "example/unlinked" } },
+  ]);
+  const body = await (await repositories.GET(request())).json();
+  assert.equal(body.repositories[0].buildCommand, "first");
+  assert.equal(body.repositories[1].linked, false);
+  assert.equal(calls.length, 2);
 });

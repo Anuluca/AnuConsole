@@ -33,11 +33,13 @@ const credentials = { ADMIN_PASSWORD_HASH: await hashPassword(adminPassword), VI
 Object.assign(process.env, credentials, { NODE_ENV: "test", SESSION_SECRET: randomBytes(48).toString("hex"), HOME_FEATURES_TOKEN: randomBytes(32).toString("hex") });
 const auth = await import("../src/lib/auth.ts");
 const route = await import("../src/app/api/features/home/route.ts");
+const likesRoute = await import("../src/app/api/data/flora-likes/route.ts");
 const actions = await import("../src/app/actions.ts");
 const originalFetch = globalThis.fetch;
 let upstreamCalls = 0;
-globalThis.fetch = async () => {
+globalThis.fetch = async (input) => {
   upstreamCalls++;
+  if (String(input).includes('/admin/floratrium/likes')) return Response.json({ counts:{huahua:5,xiaohei:3},version:'1',updatedAt:null,limit:10,timezone:'Asia/Shanghai',days:[],adjustments:[] });
   return Response.json({ lucarioHeadache: true, headacheCount: 10, updatedAt: null });
 };
 
@@ -56,7 +58,7 @@ after(() => {
   }
 });
 
-async function signedSession(username: "admin" | "viewer", extra = {}) {
+async function signedSession(username: "admin" | "user", extra = {}) {
   const account = getAccount(username)!;
   cookieValues.set("anuconsole_session", await sealData({
     username, expiresAt: Date.now() + 60000, credentialVersion: accountVersion(account), ...extra,
@@ -74,9 +76,9 @@ test("未登录及伪造 Cookie 不能访问受保护的读取接口", async () 
   assert.equal(upstreamCalls, 0);
 });
 
-test("viewer 可读取数据，但直接写入返回 403 且不访问上游", async () => {
-  await signedSession("viewer", { role: "admin" });
-  assert.deepEqual(await auth.requireUser(), { username: "viewer", role: "viewer" });
+test("user 可读取数据，但直接写入返回 403 且不访问上游", async () => {
+  await signedSession("user", { role: "admin" });
+  assert.deepEqual(await auth.requireUser(), { username: "user", role: "viewer" });
   assert.equal((await route.GET()).status, 200);
   assert.equal(upstreamCalls, 1);
   const denied = await route.PUT(updateRequest());
@@ -85,27 +87,27 @@ test("viewer 可读取数据，但直接写入返回 403 且不访问上游", as
   assert.equal(upstreamCalls, 1);
 });
 
-test("管理员保留写权限，开发免登录也不提升已登录 viewer 的权限", async () => {
+test("管理员保留写权限，开发免登录也不提升已登录 user 的权限", async () => {
   await signedSession("admin");
   assert.equal((await route.PUT(updateRequest())).status, 200);
-  await signedSession("viewer");
+  await signedSession("user");
   Object.assign(process.env, { NODE_ENV: "development" });
   assert.equal((await route.PUT(updateRequest())).status, 403);
   cookieValues.clear();
   assert.equal((await auth.requireUser()).role, "admin");
 });
 
-test("密码变更、禁用 viewer 和会话到期后不可继续读取", async () => {
-  await signedSession("viewer");
+test("密码变更、禁用 user 和会话到期后不可继续读取", async () => {
+  await signedSession("user");
   delete process.env.VIEWER_PASSWORD_HASH;
   await assert.rejects(() => route.GET(), /REDIRECT:\/login/);
   Object.assign(process.env, credentials);
-  await signedSession("viewer", { expiresAt: Date.now() - 1 });
+  await signedSession("user", { expiresAt: Date.now() - 1 });
   await assert.rejects(() => route.GET(), /REDIRECT:\/login/);
 });
 
 test("登录动作创建正确角色的加密会话，账号与密码不能交叉使用", async () => {
-  for (const [username, password] of [["viewer", viewerPassword], ["admin", adminPassword]]) {
+  for (const [username, password] of [["user", viewerPassword], ["admin", adminPassword]]) {
     const form = new FormData();
     form.set("username", username);
     form.set("password", password);
@@ -113,7 +115,50 @@ test("登录动作创建正确角色的加密会话，账号与密码不能交�
     assert.equal((await auth.requireUser()).username, username);
   }
   const wrong = new FormData();
-  wrong.set("username", "viewer");
+  wrong.set("username", "user");
   wrong.set("password", adminPassword);
   assert.match((await actions.login({ error: "" }, wrong)).error, /账号或密码错误/);
+});
+
+
+test("喜爱维护只读用户不可写，管理员写入受同源与字段校验保护", async () => {
+  await signedSession('user');
+  assert.equal((await likesRoute.GET()).status, 200);
+  const write = (origin = 'https://console.example.invalid', counts = {huahua:10,xiaohei:20}) => new Request('https://console.example.invalid/api/data/flora-likes', {method:'PUT',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({counts,version:'1'})});
+  assert.equal((await likesRoute.PUT(write())).status,403);
+  assert.equal(upstreamCalls,1);
+  await signedSession('admin');
+  assert.equal((await likesRoute.PUT(write('https://evil.invalid'))).status,403);
+  assert.equal((await likesRoute.PUT(write('https://console.example.invalid',{huahua:-1,xiaohei:1}))).status,400);
+  assert.equal(upstreamCalls,1);
+  assert.equal((await likesRoute.PUT(write())).status,200);
+  assert.equal(upstreamCalls,2);
+});
+
+
+test("游客无需密码即可登录，生产及开发环境始终只读", async () => {
+  delete process.env.VIEWER_PASSWORD_HASH;
+  const form = new FormData();
+  form.set("username", "admin");
+  form.set("role", "admin");
+  await assert.rejects(() => actions.guestLogin({ error: "" }, form), /REDIRECT:\/$/);
+  for (const environment of ["production", "development"]) {
+    Object.assign(process.env, { NODE_ENV: environment });
+    assert.deepEqual(await auth.requireUser(), { username: "guest", role: "viewer" });
+    assert.equal((await route.GET()).status, 200);
+    const before = upstreamCalls;
+    assert.equal((await route.PUT(updateRequest())).status, 403);
+    assert.equal(upstreamCalls, before);
+  }
+});
+
+test("游客会话到期或管理员凭据轮换后失效", async () => {
+  await assert.rejects(() => actions.guestLogin({ error: "" }, new FormData()), /REDIRECT:\/$/);
+  const session = await auth.getSession();
+  session.expiresAt = Date.now() - 1;
+  await session.save();
+  await assert.rejects(() => route.GET(), /REDIRECT:\/login/);
+  await assert.rejects(() => actions.guestLogin({ error: "" }, new FormData()), /REDIRECT:\/$/);
+  process.env.ADMIN_PASSWORD_HASH = await hashPassword(randomBytes(18).toString("hex"));
+  await assert.rejects(() => route.GET(), /REDIRECT:\/login/);
 });

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openNavigation } from "./helpers/navigation";
+import { openNavigation, openLogoutConfirmation } from "./helpers/navigation";
 
 const production = process.env.E2E_AUTH_MODE === "production";
 
@@ -13,6 +13,7 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
     }
     await expect(page.getByRole("heading", { name: /DRIVEN BY/ })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("login.png"), fullPage: true });
+    await page.getByRole("tab", { name: "管理员", exact: true }).click();
     await page.getByLabel("登录密码").fill("deliberately-incorrect");
     await page.getByRole("button", { name: "登录", exact: true }).click();
     await expect(page.getByRole("status")).toContainText("账号或密码错误");
@@ -32,7 +33,7 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
       await expect(page).toHaveURL(path);
     }
     expect((await context.cookies()).some(cookie => cookie.name === "anuconsole_session")).toBe(false);
-    await expect(page.getByRole("button", { name: /退出/ })).toBeVisible();
+    await expect(page.locator(".logout")).toHaveCount(1);
   }
 
   await page.goto("/anutrium");
@@ -94,9 +95,10 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
   await page.screenshot({ path: testInfo.outputPath("console.png"), fullPage: true });
   const beforeDialog = await page.locator(".main-content").boundingBox();
   const bodyWidth = await page.evaluate(() => document.body.getBoundingClientRect().width);
-  await page.getByRole("button", { name: "退出", exact: true }).click();
+  await openLogoutConfirmation(page);
   await expect(page.getByRole("alertdialog")).toBeVisible();
-  await expect(page.getByRole("button", { name: "取消", exact: true })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "退出登录？", exact: true })).not.toBeFocused();
+  await expect(page.locator("body")).toBeFocused();
   await expect(page).toHaveURL("/anutrium/about");
   const afterDialog = await page.locator(".main-content").boundingBox();
   expect(Math.abs(afterDialog!.x - beforeDialog!.x)).toBeLessThanOrEqual(1);
@@ -105,10 +107,10 @@ test("环境访问策略、项目路由、转场几何与刷新", async ({ page,
   await page.getByRole("button", { name: "取消", exact: true }).click();
   await expect(page.getByRole("alertdialog")).not.toBeVisible();
   await expect(page).toHaveURL("/anutrium/about");
-  await page.getByRole("button", { name: "退出", exact: true }).click();
+  await openLogoutConfirmation(page);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("alertdialog")).not.toBeVisible();
-  await page.getByRole("button", { name: "退出", exact: true }).click();
+  await openLogoutConfirmation(page);
   await page.screenshot({ path: testInfo.outputPath("logout-confirm.png"), fullPage: true });
   await page.getByRole("button", { name: "确认退出", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);

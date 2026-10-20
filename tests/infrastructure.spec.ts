@@ -28,9 +28,11 @@ test("DNS 记录增改删、筛选、取消确认与保存失败后的重新读�
   await page.getByRole("button", { name: "新增记录" }).click();
   let dialog = page.getByRole("dialog");
   const recordType = dialog.getByRole("button", { name: "记录类型", exact: true });
+  await expect(page.locator("body")).toBeFocused();
   await recordType.focus();
   await page.keyboard.press("ArrowDown");
-  await expect(dialog.getByRole("listbox", { name: "记录类型" })).toBeFocused();
+  await expect(dialog.getByRole("listbox", { name: "记录类型" })).not.toBeFocused();
+  await expect(recordType).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await expect(recordType).toContainText("AAAA");
@@ -258,7 +260,7 @@ test("创建失败后重新读取列表，启用允许列表时禁用新增项�
   await dialog.getByRole("textbox", { name: /^项目名称/ }).fill("new-project");
   await dialog.getByRole("button", { name: "创建项目", exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Netlify项目管理" }).getByRole("alert")).toContainText("请先核对项目列表");
+  await expect(page.getByRole("region", { name: "Netlify部署管理" }).getByRole("alert")).toContainText("请先核对项目列表");
   expect(attempts).toBe(1);
   expect(reads).toBeGreaterThan(1);
   restricted = true;

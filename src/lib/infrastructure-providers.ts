@@ -60,6 +60,22 @@ export async function listDns(page: number, search = "", type = ""): Promise<Dns
   const info = object(data.result_info) ? data.result_info : {};
   return { records: data.result.map(dnsRecord), page, pages: Number(info.total_pages) || 1, total: Number(info.total_count) || data.result.length, zone: DNS_ZONE };
 }
+
+/** 状态标识只验证最小读取权限，不传输完整 DNS 记录和项目列表。 */
+export async function getInfrastructureConnections() {
+  const [cloudflare, netlify] = await Promise.allSettled([
+    (async () => {
+      const data = await upstream("cloudflare", `${dnsPath()}?page=1&per_page=1`) as JsonObject;
+      if (!Array.isArray(data.result)) throw new InfrastructureError("invalid_response", 502);
+      data.result.forEach(dnsRecord);
+    })(),
+    (async () => {
+      const data = await upstream("netlify", "/sites?page=1&per_page=1");
+      if (!Array.isArray(data)) throw new InfrastructureError("invalid_response", 502);
+    })(),
+  ]);
+  return { cloudflare: cloudflare.status === "fulfilled", netlify: netlify.status === "fulfilled" };
+}
 export async function writeDns(input: DnsInput, id?: string) {
   const data = await upstream("cloudflare", `${dnsPath()}${id ? `/${identifier(id)}` : ""}`, id ? "PATCH" : "POST", input) as JsonObject;
   return { record: dnsRecord(data.result) };
@@ -73,9 +89,12 @@ export async function deleteDns(id: string) {
   return { ok: true };
 }
 
-function siteAllowed(id: string): boolean {
-  const allowed = process.env.NETLIFY_SITE_IDS?.split(",").map(value => value.trim()).filter(Boolean);
-  return !allowed?.length || allowed.includes(id);
+function allowedSiteIds(): Set<string> {
+  // 每次业务读取解析一次，不在每条站点记录中重复拆分配置；不跨请求缓存权限配置。
+  return new Set(process.env.NETLIFY_SITE_IDS?.split(",").map(value => value.trim()).filter(Boolean));
+}
+function siteAllowed(id: string, allowed = allowedSiteIds()): boolean {
+  return !allowed.size || allowed.has(id);
 }
 function siteSummary(value: unknown): NetlifySite {
   if (!object(value) || typeof value.id !== "string" || typeof value.name !== "string") throw new InfrastructureError("invalid_response", 502);
@@ -95,7 +114,8 @@ async function siteRaw(id: string): Promise<JsonObject> {
 export async function listNetlify(page: number) {
   const data = await upstream("netlify", `/sites?page=${page}&per_page=50`);
   if (!Array.isArray(data)) throw new InfrastructureError("invalid_response", 502);
-  return { sites: data.map(siteSummary).filter(site => siteAllowed(site.id)), page, hasMore: data.length === 50, restricted: !!process.env.NETLIFY_SITE_IDS?.trim() };
+  const allowed = allowedSiteIds();
+  return { sites: data.map(siteSummary).filter(site => siteAllowed(site.id, allowed)), page, hasMore: data.length === 50, restricted: !!process.env.NETLIFY_SITE_IDS?.trim() };
 }
 export async function listNetlifyAccounts(): Promise<{ accounts: NetlifyAccount[] }> {
   const data = await upstream("netlify", "/accounts");
@@ -124,11 +144,12 @@ async function github(path: string): Promise<unknown> {
 
 async function linkedGitHubRepositories() {
   const repositories: JsonObject[] = [];
+  const allowed = allowedSiteIds();
   // 复用已有 GitHub App 关联信息，不返回仓库 env、访问令牌或完整平台响应。
   for (let page = 1; page <= 10; page++) {
     const sites = await upstream("netlify", `/sites?page=${page}&per_page=100`);
     if (!Array.isArray(sites)) throw new InfrastructureError("invalid_response", 502);
-    for (const site of sites) if (object(site) && typeof site.id === "string" && siteAllowed(site.id) && object(site.build_settings)) {
+    for (const site of sites) if (object(site) && typeof site.id === "string" && siteAllowed(site.id, allowed) && object(site.build_settings)) {
       const repo = site.build_settings;
       if (repo.provider === "github" && typeof repo.repo_path === "string") repositories.push(Object.fromEntries(Object.entries(repo).filter(([key]) => ["repo_path", "repo_branch", "installation_id", "deploy_key_id", "cmd", "dir"].includes(key))));
     }
@@ -141,9 +162,16 @@ export async function listGitHubRepositories(page: number): Promise<GitHubReposi
   if (!process.env.GITHUB_API_TOKEN?.trim()) throw new InfrastructureError("github_not_configured", 503);
   const [data, linked] = await Promise.all([github(`/user/repos?per_page=100&page=${page}&sort=updated&direction=desc`), linkedGitHubRepositories()]);
   if (!Array.isArray(data)) throw new InfrastructureError("invalid_response", 502);
+  // 一次建立索引，将仓库与关联项目匹配从 O(n*m) 降为 O(n+m)。
+  // 同一仓库关联多个站点时保留首项，与原 find 的选择顺序一致。
+  const linkedByPath = new Map<string, JsonObject>();
+  for (const item of linked) {
+    const path = String(item.repo_path).toLowerCase();
+    if (!linkedByPath.has(path)) linkedByPath.set(path, item);
+  }
   const repositories = data.filter(repo => object(repo) && repo.archived !== true && repo.disabled !== true).map(repo => {
     if (!object(repo) || !Number.isSafeInteger(repo.id) || typeof repo.full_name !== "string" || typeof repo.default_branch !== "string" || typeof repo.private !== "boolean") throw new InfrastructureError("invalid_response", 502);
-    const existing = linked.find(item => String(item.repo_path).toLowerCase() === String(repo.full_name).toLowerCase());
+    const existing = linkedByPath.get(repo.full_name.toLowerCase());
     return { id: Number(repo.id), path: repo.full_name, defaultBranch: repo.default_branch, private: repo.private, linked: !!existing,
       ...(typeof existing?.cmd === "string" ? { buildCommand: existing.cmd } : {}), ...(typeof existing?.dir === "string" ? { publishDirectory: existing.dir } : {}) };
   });

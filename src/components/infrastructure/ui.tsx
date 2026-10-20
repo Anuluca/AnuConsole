@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { openDialog, closeDialog } from "@/lib/dialog";
 import { infrastructureMessages } from "@/lib/infrastructure-contract";
 import { ManagementButton } from "./management-button";
 import { LoadingIndicator } from "../loading-indicator";
@@ -48,9 +49,6 @@ export function ResourceState({ loading, error, retry }: { loading?: boolean; er
   if (loading) return <LoadingIndicator label="正在读取数据" />;
   return null;
 }
-export function ReadOnly({ writable }: { writable: boolean }) {
-  return !writable && <p className="infra-notice">当前为只读账号，可查看配置，不能修改。</p>;
-}
 export function ActionMessage({ message }: { message: { text: string; error?: boolean } | null }) {
   return message && <p className={`infra-notice${message.error ? " infra-error" : ""}`} role={message.error ? "alert" : "status"}>{message.text}</p>;
 }
@@ -61,26 +59,24 @@ export function ManagementSelect({ label, value, options, onChange, disabled = f
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
   const listId = useId();
   useEffect(() => {
     if (!open) return;
-    root.current?.querySelector<HTMLElement>("[role=listbox]")?.focus();
     const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
     document.addEventListener("pointerdown", outside);
     return () => document.removeEventListener("pointerdown", outside);
   }, [open]);
   useEffect(() => { if (open) root.current?.querySelector<HTMLElement>(`[data-index="${index}"]`)?.scrollIntoView({ block: "nearest" }); }, [index, open]);
-  function choose(next: string) { onChange(next); setOpen(false); trigger.current?.focus(); }
+  function choose(next: string) { onChange(next); setOpen(false); }
   return <div className="infra-select" ref={root} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }} onKeyDown={event => {
     if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
       event.preventDefault();
       setOpen(true);
       setIndex(current => event.key === "Home" ? 0 : event.key === "End" ? options.length - 1 : !open ? Math.max(0, options.findIndex(option => option.value === value)) : (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
     } else if (open && ["Enter", " "].includes(event.key)) { event.preventDefault(); choose(options[index].value); }
-    else if (event.key === "Escape" && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus(); }
+    else if (event.key === "Escape" && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); }
   }}>
-    <button ref={trigger} type="button" className="infra-select-trigger" disabled={disabled} aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId}
+    <button type="button" className="infra-select-trigger" disabled={disabled} aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId} aria-activedescendant={open ? `${listId}-${index}` : undefined}
       onClick={() => { setIndex(Math.max(0, options.findIndex(option => option.value === value))); setOpen(current => !current); }}><span>{options.find(option => option.value === value)?.label ?? value}</span><svg className="infra-select-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
     {open && <div className="infra-select-options" id={listId} role="listbox" tabIndex={-1} aria-activedescendant={`${listId}-${index}`} aria-label={label}>{options.map((option, optionIndex) =>
       <button key={option.value} type="button" role="option" tabIndex={-1} id={`${listId}-${optionIndex}`} data-index={optionIndex} aria-selected={value === option.value} data-highlighted={index === optionIndex}
@@ -98,9 +94,9 @@ export function ManagementModal({ title, children, footer, onClose, busy = false
   const descriptionId = useId();
   useEffect(() => {
     const dialog = ref.current!;
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) openDialog(dialog);
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) motion.current = dialog.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 180, easing: "ease-out" });
-    return () => { motion.current?.cancel(); if (dialog.open) dialog.close(); };
+    return () => { motion.current?.cancel(); if (dialog.open) closeDialog(dialog); };
   }, []);
   async function dismiss() {
     const dialog = ref.current;
@@ -112,7 +108,7 @@ export function ManagementModal({ title, children, footer, onClose, busy = false
       motion.current = animation;
       await animation.finished.catch(() => {});
     }
-    dialog.close();
+    closeDialog(dialog);
     onClose();
   }
   useEffect(() => { if (closeRequested && !busy) void dismiss(); });

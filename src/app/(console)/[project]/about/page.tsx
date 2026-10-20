@@ -18,6 +18,7 @@ export default async function AboutPage({ params }: { params: Promise<{ project:
   return <section className="about-page" aria-label="关于内容区">
     <div className="about-intro">
       <h2><Brand href={`/${project.id}`} subtitle="PROJECT BACKEND" /></h2>
+      <div className="about-details">
       <p>AnuConsole 是 Anutrium 等多个项目的管理后台。</p>
       <div className="about-contact">
         <span>开发者：Anuluca</span>
@@ -32,6 +33,7 @@ export default async function AboutPage({ params }: { params: Promise<{ project:
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c-2.5 2.5-3.8 5.5-3.8 9s1.3 6.5 3.8 9m0-18c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9" /></svg>
           <span>Anutrium</span>
         </a>}
+      </div>
       </div>
     </div>
   </section>;

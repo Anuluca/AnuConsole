@@ -368,6 +368,11 @@ input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .login-form input { display: block; width: 100%; height: 49px; border: 1px solid var(--input-line); border-radius: 0; padding: 0 15px; color: var(--ink); background: var(--glass-inset); font-size: 13px; }
 .login-form > input { margin-bottom: 24px; }
 .login-form input::placeholder { font-size: 12px; color: var(--placeholder); }
+@media (max-width: 700px) {
+  /* 登录输入保持 16px，避免 iPhone Safari 为小字号输入框自动放大页面。 */
+  .login-form input { font-size: 16px; }
+  .login-form input::placeholder { font-size: inherit; }
+}
 .password-field { position: relative; }
 .password-field input { padding-right: 52px; }
 .password-toggle { position: absolute; right: 5px; top: 4px; width: 41px; height: 41px; border: 0; border-radius: 0; background: transparent; color: var(--muted); display: grid; place-items: center; }

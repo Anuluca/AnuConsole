@@ -38,6 +38,10 @@ test("Anutrium 首页展示今天概览、实时人数，并复用头疼模式�
   await expect(page.locator(".monitor-live-content > strong")).toHaveText("0");
   await expect(page.getByRole("region", { name: "每日趋势", exact: true })).toBeVisible();
   await expect(page.locator(".monitor-chart")).toBeVisible();
+  const dateTick = page.locator(".monitor-chart-date");
+  await expect(dateTick).toHaveCount(1);
+  await expect(dateTick).toHaveAttribute("text-anchor", "middle");
+  expect(await dateTick.getAttribute("x")).toBe(await page.locator(".monitor-chart-point").getAttribute("cx"));
   await expect(page.getByRole("region", { name: "分类报表", exact: true })).toHaveCount(0);
   const toggle = page.getByRole("switch", { name: "路卡雕像的头疼模式" });
   await expect(toggle).toBeEnabled();

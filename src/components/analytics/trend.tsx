@@ -26,6 +26,8 @@ export const Trend = memo(function Trend({
     () => buildTrend(report?.rows ?? [], metric),
     [report, metric],
   );
+  // 日期刻度复用数据点的横坐标；单日只显示中央刻度，避免左右重复同一天。
+  const dateTicks = points.length <= 1 ? points : [points[0], points[points.length - 1]];
   const y = (value: number) => 210 - (value / max) * 180;
   const selected = activePoint === null ? undefined : points[activePoint];
   return (
@@ -146,12 +148,12 @@ export const Trend = memo(function Trend({
                 </text>
               </g>
             )}
-            <text x="30" y="242">
-              {rowLabel("trend", rows[0].dimensions)}
-            </text>
-            <text x="770" y="242" textAnchor="end">
-              {rowLabel("trend", rows[rows.length - 1].dimensions)}
-            </text>
+            {dateTicks.map((point, index) => (
+              <text key={index} className="monitor-chart-date" x={point.x} y="242"
+                textAnchor={dateTicks.length === 1 ? "middle" : index === 0 ? "start" : "end"}>
+                {point.label}
+              </text>
+            ))}
           </svg>
           <details className="monitor-trend-data">
             <summary>查看每日数据</summary>

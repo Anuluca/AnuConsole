@@ -70,3 +70,19 @@ test("实时数字的手机端留白在刷新后保留", async ({ page }, testIn
     await expect(number).toHaveCSS("min-height", "74px");
   }
 });
+
+test("手机登录输入保持适合 Safari 的字号且不限制手动缩放", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "desktop", "桌面字号保持原样");
+  await page.goto("/login");
+  for (let load = 0; load < 2; load++) {
+    if (load) await page.reload();
+    await page.getByRole("tab", { name: "管理员", exact: true }).click();
+    for (const id of ["username", "password"]) {
+      const input = page.locator(`#${id}`);
+      await input.click();
+      await expect(input).toHaveCSS("font-size", "16px");
+    }
+    const viewport = await page.locator('meta[name="viewport"]').getAttribute("content");
+    expect(viewport).not.toMatch(/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?:[\s,]|$)/);
+  }
+});

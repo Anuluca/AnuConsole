@@ -8,10 +8,14 @@ import { hashPassword } from "../src/lib/security.ts";
 
 // 仅替换 Next.js 的请求上下文，使用真实的加密 Cookie、授权函数与 API 处理器。
 const cookieValues = new Map<string, string>();
+let cookieMaxAge: number | undefined;
 const testGlobals = globalThis as typeof globalThis & { __anuTestCookieStore?: unknown };
 testGlobals.__anuTestCookieStore = {
   get(name: string) { return { value: cookieValues.get(name) ?? "" }; },
-  set(name: string, value: string) { cookieValues.set(name, value); },
+  set(name: string, value: string, options?: { maxAge?: number }) {
+    cookieValues.set(name, value);
+    cookieMaxAge = options?.maxAge;
+  },
 };
 const stubs: Record<string, string> = {
   "server-only": "export {};",
@@ -45,6 +49,7 @@ globalThis.fetch = async (input) => {
 
 beforeEach(() => {
   cookieValues.clear();
+  cookieMaxAge = undefined;
   upstreamCalls = 0;
   Object.assign(process.env, credentials, { NODE_ENV: "test" });
 });
@@ -68,6 +73,22 @@ const updateRequest = () => new Request("https://console.example.invalid/api/fea
   method: "PUT", headers: { Origin: "https://console.example.invalid", "Content-Type": "application/json" },
   body: JSON.stringify({ lucarioHeadache: false }),
 });
+
+for (const username of ["admin", "user", "guest"] as const) {
+  test(`${username} 登录后会话与持久 Cookie 保留 14 天，到期立即失效`, async t => {
+    const now = Date.now();
+    const fourteenDays = 14 * 24 * 60 * 60;
+    t.mock.timers.enable({ apis: ["Date"], now });
+    await auth.createUserSession(username);
+    assert.equal(cookieMaxAge, fourteenDays);
+    assert.equal((await auth.getSession()).expiresAt, now + fourteenDays * 1000);
+    // 使用真实加密 Cookie 重新读取，验证有效期边界而非仅检查配置常量。
+    t.mock.timers.tick(fourteenDays * 1000 - 1);
+    assert.equal((await auth.getAuthenticatedUser())?.username, username);
+    t.mock.timers.tick(1);
+    assert.equal(await auth.getAuthenticatedUser(), null);
+  });
+}
 
 test("未登录及伪造 Cookie 不能访问受保护的读取接口", async () => {
   await assert.rejects(() => route.GET(), /REDIRECT:\/login/);

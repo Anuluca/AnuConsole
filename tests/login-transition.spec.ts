@@ -41,10 +41,17 @@ test("默认游客入口、键盘切换与免密码访问", async ({ page, conte
   const form = await page.locator("#login-panel-admin .login-form").boundingBox();
   expect(button!.width).toBeCloseTo(form!.width, 0);
   await page.keyboard.press("Home");
+  const loginStartedAt = Date.now() / 1000;
   await page.getByRole("button", { name: "游客访问", exact: true }).click();
   await expect(page).toHaveURL("/anutrium");
   await expect(page.locator(".account")).toContainText("guest");
-  expect((await context.cookies()).some(cookie => cookie.name === "anuconsole_session")).toBe(true);
+  const sessionCookie = (await context.cookies()).find(cookie => cookie.name === "anuconsole_session");
+  // 必须为持久 Cookie，不能仅在当前浏览器进程内保留会话。
+  expect(sessionCookie).toBeDefined();
+  expect(sessionCookie!.expires).toBeGreaterThanOrEqual(loginStartedAt + 14 * 86400 - 1);
+  expect(sessionCookie!.expires).toBeLessThanOrEqual(Date.now() / 1000 + 14 * 86400 + 1);
+  await page.reload();
+  await expect(page.locator(".account")).toContainText("guest");
   const denied = await page.request.put("/api/features/home", { data: { lucarioHeadache: false } });
   expect(denied.status()).toBe(403);
 });

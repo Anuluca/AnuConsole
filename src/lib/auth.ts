@@ -5,7 +5,8 @@ import { getIronSession } from "iron-session";
 import { developmentAuthBypass } from "./auth-policy.ts";
 import { accountVersion, getAccount, sessionIdentity, validPasswordHash, type UserSession } from "./accounts.ts";
 
-export const SESSION_TTL = 60 * 60 * 8;
+// Cookie、加密会话和服务端到期时间共用此值，登录后固定保留 14 天。
+export const SESSION_TTL = 60 * 60 * 24 * 14;
 
 export function authConfigured(): boolean {
   return validPasswordHash(process.env.ADMIN_PASSWORD_HASH) &&

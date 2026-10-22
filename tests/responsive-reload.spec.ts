@@ -86,3 +86,50 @@ test("手机登录输入保持适合 Safari 的字号且不限制手动缩放", 
     expect(viewport).not.toMatch(/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?:[\s,]|$)/);
   }
 });
+
+test("手机登录页始终留在窗口内，动画和标签切换不改变外框位置", async ({ page, browserName }, testInfo) => {
+  test.skip(testInfo.project.name === "desktop", "仅限制手机登录布局");
+  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 664 }, { width: 402, height: 874 }, { width: 667, height: 375 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/login");
+    await page.evaluate(() => document.fonts.ready);
+    const check = async () => {
+      const geometry = await page.locator(".login-page").evaluate(el => {
+        const active = el.querySelector('.login-panels > [role="tabpanel"]:not([hidden])')!;
+        const bounds = el.getBoundingClientRect();
+        const items = [el.querySelector(".login-tools")!, active.querySelector(".login-submit")!, el.querySelector(".login-footer")!];
+        return {
+          bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+          overflow: document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth,
+          controlsInside: items.every(item => { const r = item.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }),
+        };
+      });
+      expect(geometry.overflow).toBe(false);
+      expect(geometry.controlsInside).toBe(true);
+      expect(geometry.bounds).toEqual({ x: 0, y: 0, ...viewport });
+      return geometry.bounds;
+    };
+    const initial = await check();
+    await expect(page.locator(".login-page")).toHaveCSS("touch-action", "pinch-zoom");
+    await expect(page.locator("html")).toHaveCSS("overscroll-behavior-y", "none");
+    // 移动 WebKit 不支持滚轮模拟；Chromium 额外验证默认滚动行为。
+    if (browserName === "chromium") {
+      await page.mouse.move(viewport.width / 2, viewport.height / 2);
+      await page.mouse.wheel(0, 400);
+    }
+    expect(await check()).toEqual(initial);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await page.getByRole("tab", { name: "管理员", exact: true }).click();
+    await expect(page.getByRole("tab", { name: "管理员", exact: true })).toHaveAttribute("aria-selected", "true");
+    expect(await check()).toEqual(initial);
+    // 从正在输入切到完整代码，覆盖代码高度大幅变化的情况。
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await check()).toEqual(initial);
+    await page.evaluate(() => window.scrollTo(0, 300));
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    expect(await page.locator("body").evaluate(el => el.style.overflow)).toBe("");
+    await page.reload();
+    expect(await check()).toEqual(initial);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
+});

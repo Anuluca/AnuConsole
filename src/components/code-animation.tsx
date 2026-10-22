@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { loginCode as source } from "@/lib/login-code";
 
@@ -48,7 +48,6 @@ const CodeLine = memo(function CodeLine({
 
 export function CodeAnimation() {
   const [count, setCount] = useState(initialCount);
-  const viewport = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -79,16 +78,10 @@ export function CodeAnimation() {
     };
   }, []);
 
-  useEffect(() => {
-    if (viewport.current)
-      viewport.current.scrollTop = viewport.current.scrollHeight;
-  }, [count]);
-
   const lines = source.slice(0, count).split("\n");
   return (
     <div
       className="code-animation"
-      ref={viewport}
       aria-hidden="true"
       data-typed={count}
     >

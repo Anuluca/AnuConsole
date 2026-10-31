@@ -144,3 +144,7 @@ accent: "#f4f500",
 onAccent: "#17191b",
 themeColors: { light: { accent: "#686900", onAccent: "#fff" } },
 ```
+
+## Markdown 笔记管理
+
+Anutrium 菜单「笔记管理」（`/anutrium/notes`）支持 `.md` 导入、新增发布、标题搜索、分类筛选、正文／原文查看、编辑保存及确认删除。管理员可写入，只读账号仅可查看；编辑与删除均使用 ETag 版本校验，冲突时保留草稿。服务端复用 `HOME_FEATURES_TOKEN` 与 `HOME_FEATURES_URL` 的 Worker 域名；先部署 Anutrium Worker 的 `/admin/notes` 接口，再部署网站和后台。原始 Markdown 保存在 R2 `notes/<uuid>.md`，单文件最大 256 KB，标签支持 `technology`（技术）、`pokemon`（宝可梦）、`daily`（日常），集中配置在 `src/lib/note-categories.ts`。完整协议与验证记录见 Anutrium 仓库 `docs/notes.md`。

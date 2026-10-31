@@ -4,7 +4,7 @@
 
 - 本项目是独立的 Next.js 多项目管理后台，当前维护 Anutrium（anuluca.com）与 DRRR情报屋。
 - 技术栈：Next.js App Router、React、TypeScript；Anutrium 主题色为 `#E23456`，DRRR情报屋为 `#f4f500`。
-- 项目配置集中在 `src/lib/projects.ts`。`/` 默认跳转 `/anutrium`；Anutrium 业务路由包括首页、监视器分组（`/anutrium/monitor/ga4`，`/anutrium/monitor` 跳转子路由）、`/anutrium/features`、`/anutrium/data`。所有项目复用首页、网站运维和关于页，并保留各自项目路径；关于页排序最后。业务内容区未明确要求时保持为空。旧业务地址不保留。
+- 项目配置集中在 `src/lib/projects.ts`。`/` 默认跳转 `/anutrium`；Anutrium 业务路由包括首页、监视器分组（`/anutrium/monitor/ga4`，`/anutrium/monitor` 跳转子路由）、`/anutrium/features`、`/anutrium/data`、`/anutrium/notes`。所有项目复用首页、网站运维和关于页，并保留各自项目路径；关于页排序最后。业务内容区未明确要求时保持为空。旧业务地址不保留。
 - 所有项目菜单统一显示网站运维，地址为 `/{project}/infrastructure/dns` 与 `/{project}/infrastructure/netlify`，新增项目自动获得运维菜单。配置步骤见 `docs/infrastructure.md`。Cloudflare 固定管理 `anuluca.com`；Netlify 可用 `NETLIFY_SITE_IDS` 限制项目。环境变量明文及平台凭据不返回浏览器；自动化测试必须模拟写操作，不改真实 DNS、不触发真实构建。
 - 监视器复用网站既有 GA4 汇总接口，浏览器只能通过受保护的后台接口读取；不复制服务账号凭证、不伪造报表数据。
 - 管理员账号固定为 `admin`；可选只读账号为 `user`，通过 `VIEWER_PASSWORD_HASH` 启用，只能查看页面和数据。不得在源码、测试、文档或提交中写入真实密码与会话密钥；本地配置使用忽略提交的 `.env.local`。
@@ -45,3 +45,10 @@
 - 修改身份认证时运行 `npm test`、`npm run typecheck` 与 `npm run build`；服务已运行且有测试凭据时再运行 `npm run test:e2e`。
 
 - 运维区域操作按钮统一使用 `ManagementButton`，文字 15px、字重 900，左侧带语义图标；删除确认使用 danger 样式。
+
+## 笔记管理
+
+- `/anutrium/notes` 只管理 Anutrium Markdown 笔记；正文以 `.md` 文件保存，使用 `src/lib/note-document.ts` 的元信息协议。导入不含元信息的文件时通过表单补全。
+- 读取执行 `requireUser()`，新增、编辑、删除执行 `requireAdmin()` 与同源校验；Worker 管理密钥仅在服务端使用，复用 `HOME_FEATURES_TOKEN`。
+- 编辑／删除优先读取 `X-Note-Version` 的原始 `ETag` 值，使用 `If-Match` 校验；版本冲突保留草稿并提示重新读取，禁止无条件覆盖。删除复用 `ManagementModal` 的 danger 确认框。
+- 文件协议需与 Anutrium 的 `src/utils/noteDocument.ts` 同步；标签配置 `src/lib/note-categories.ts` 与 Anutrium `src/config/noteCategories.ts` 同步，统一提供技术、宝可梦、日常并从配置扩展。测试不得写入真实 R2。

@@ -1,0 +1,47 @@
+.notes-manager { display: grid; gap: 20px; min-width: 0; }
+.notes-hint, .notes-actions > span { color: var(--muted); font-size: 13px; }
+.notes-error { color: #e23456; }
+.notes-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+.notes-import { display: grid; gap: 10px; }
+.notes-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.notes-fields > label, .notes-editor { display: grid; gap: 10px; min-width: 0; }
+.notes-fields input:not([type=radio]), .notes-editor textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--line); padding: 12px; color: inherit; background: var(--glass-inset); font: inherit; }
+.notes-categories { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; min-height: 45px; }
+.notes-categories label { display: flex; gap: 8px; align-items: center; }
+.notes-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; min-width: 0; }
+.notes-editor { align-content: start; }
+.notes-editor textarea { min-height: 480px; resize: vertical; font-family: Consolas, monospace; font-size: 14px; line-height: 1.8; }
+.notes-preview { min-width: 0; padding: 18px; border: 1px solid var(--line); overflow-wrap: anywhere; line-height: 1.8; }
+.notes-preview > h2 { font-size: 14px; color: var(--muted); margin: 0 0 12px; }
+.notes-preview h1, .notes-preview h2, .notes-preview h3 { margin-top: 20px; }
+.notes-preview p, .notes-preview ul, .notes-preview ol, .notes-preview pre, .notes-preview table { margin: 16px 0; }
+.notes-preview pre { padding: 12px; background: var(--glass-inset); overflow: auto; max-width: 100%; }
+.notes-preview code { font-family: Consolas, monospace; font-size: 13px; }
+.notes-preview ul, .notes-preview ol { padding-left: 24px; }
+.notes-preview blockquote { border-left: 3px solid var(--accent); margin: 16px 0; padding-left: 16px; }
+.notes-preview table { display: block; max-width: 100%; overflow: auto; border-collapse: collapse; }
+.notes-preview th, .notes-preview td { padding: 8px; border: 1px solid var(--line); }
+.notes-preview img { max-width: 100%; height: auto; }
+.notes-published { border-top: 1px solid var(--line); padding-top: 20px; }
+.notes-published h2 { margin-bottom: 16px; }
+.notes-published p { display: grid; gap: 6px; padding: 12px 0; }
+.notes-published span { color: var(--muted); font-size: 12px; }
+.notes-published a, .notes-preview a { color: var(--accent); }
+@media (max-width: 800px) { .notes-fields, .notes-editor-grid { grid-template-columns: minmax(0, 1fr); } .notes-editor textarea { min-height: 320px; } }
+
+.notes-manager .button-primary { background: var(--accent); color: var(--on-accent, #fff); }
+.notes-fields > .notes-category-field { display: grid; gap: 10px; }
+.notes-search { display: flex; gap: 16px; align-items: end; flex-wrap: wrap; margin: 18px 0; }
+.notes-search > label { display: grid; gap: 8px; flex: 1; min-width: min(220px, 100%); }
+.notes-search input { width: 100%; min-width: 0; padding: 12px; color: inherit; background: var(--glass-inset); border: 1px solid var(--line); font: inherit; box-sizing: border-box; }
+.notes-search > span { color: var(--muted); font-size: 12px; padding: 12px 0; }
+.notes-row { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--divider); }
+.notes-row__copy { display: grid; align-content: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.notes-row .notes-actions { flex-shrink: 0; }
+.notes-viewer { padding: 0; border: 0; }
+.notes-source { margin-top: 20px; }
+.notes-source pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; }
+@media (max-width: 800px) { .notes-row { flex-direction: column; } .notes-search > .infra-select { width: 100%; } }
+.notes-manager .button-danger { background: var(--error); color: #fff; }
+.notes-viewer > h2 { font-size: 21px; color: inherit; margin: 1.4em 0 .6em; }
+.notes-source pre { font-family: Consolas, monospace; font-size: 12px; line-height: 1.8; }

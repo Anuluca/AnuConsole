@@ -1,5 +1,5 @@
 export type ProjectId = "anutrium" | "drrr";
-export type RouteKey = "home" | "monitor" | "ga4" | "features" | "data" | "infrastructure" | "dns" | "netlify" | "about";
+export type RouteKey = "home" | "monitor" | "ga4" | "features" | "data" | "notes" | "infrastructure" | "dns" | "netlify" | "about";
 
 export type RouteItem = {
   key: RouteKey;
@@ -37,6 +37,7 @@ const projectDefinitions: readonly Project[] = [
       ] },
       { key: "features", label: "功能调整", href: "/anutrium/features" },
       { key: "data", label: "数据维护", href: "/anutrium/data" },
+      { key: "notes", label: "笔记管理", href: "/anutrium/notes" },
       shared("anutrium", "about", "关于")
     ]
   },

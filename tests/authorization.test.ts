@@ -38,11 +38,17 @@ Object.assign(process.env, credentials, { NODE_ENV: "test", SESSION_SECRET: rand
 const auth = await import("../src/lib/auth.ts");
 const route = await import("../src/app/api/features/home/route.ts");
 const likesRoute = await import("../src/app/api/data/flora-likes/route.ts");
+const notesRoute = await import("../src/app/api/notes/route.ts");
+const noteRoute = await import("../src/app/api/notes/[id]/route.ts");
 const actions = await import("../src/app/actions.ts");
 const originalFetch = globalThis.fetch;
 let upstreamCalls = 0;
-globalThis.fetch = async (input) => {
+globalThis.fetch = async (input, init) => {
   upstreamCalls++;
+  if (String(input).includes('/admin/notes')) {
+    if (init?.method === 'GET' && String(input).endsWith(noteId)) return new Response(noteSource, { headers: { 'Content-Type': 'text/markdown', ETag: 'W/"version-one"', 'X-Note-Version': '"version-one"' } });
+    return Response.json({ notes: [], nextCursor: null }, { headers: { ETag: '"version-two"' } });
+  }
   if (String(input).includes('/admin/floratrium/likes')) return Response.json({ counts:{huahua:5,xiaohei:3},version:'1',updatedAt:null,limit:10,timezone:'Asia/Shanghai',days:[],adjustments:[] });
   return Response.json({ lucarioHeadache: true, headacheCount: 10, updatedAt: null });
 };
@@ -182,4 +188,60 @@ test("游客会话到期或管理员凭据轮换后失效", async () => {
   await assert.rejects(() => actions.guestLogin({ error: "" }, new FormData()), /REDIRECT:\/$/);
   process.env.ADMIN_PASSWORD_HASH = await hashPassword(randomBytes(18).toString("hex"));
   await assert.rejects(() => route.GET(), /REDIRECT:\/login/);
+});
+
+const noteId = '2aa08581-e032-4f35-9aa7-c84c19c57e98';
+const noteSource = '---\ntitle: "笔记测试"\ndate: "2026-10-31"\ncategory: technology\n---\n\n## 正文';
+const noteContext = () => ({ params: Promise.resolve({ id: noteId }) });
+const noteRequest = (origin = 'https://console.example.invalid', body = noteSource) => new Request(`https://console.example.invalid/api/notes/${noteId}`, {
+  method: 'PUT', headers: { Origin: origin, 'Content-Type': 'text/markdown' }, body,
+});
+test('笔记接口拒绝匿名访问，只读账号不可发布，管理员写入受同源和文件格式校验保护', async () => {
+  await assert.rejects(notesRoute.GET(new Request('https://console.example.invalid/api/notes')), /REDIRECT:/);
+  await signedSession('user');
+  assert.equal((await notesRoute.GET(new Request('https://console.example.invalid/api/notes'))).status, 200);
+  upstreamCalls = 0;
+  assert.equal((await noteRoute.PUT(noteRequest(), noteContext())).status, 403);
+  assert.equal(upstreamCalls, 0);
+  await signedSession('admin');
+  assert.equal((await noteRoute.PUT(noteRequest('https://evil.invalid'), noteContext())).status, 403);
+  assert.equal((await noteRoute.PUT(noteRequest(undefined, '# 缺少元信息'), noteContext())).status, 400);
+  assert.equal(upstreamCalls, 0);
+  assert.equal((await noteRoute.PUT(noteRequest(), noteContext())).status, 200);
+  assert.equal(upstreamCalls, 1);
+});
+
+test('笔记编辑和删除始终校验管理员、同源和版本，读取代理保留 ETag', async () => {
+  const request = (method: string, origin = 'https://console.example.invalid', etag: string | null = '"version-one"') => new Request(`https://console.example.invalid/api/notes/${noteId}`, {
+    method, headers: { Origin: origin, 'Content-Type': 'text/markdown', ...(etag ? { 'If-Match': etag } : {}) }, body: method === 'PATCH' ? noteSource : undefined,
+  });
+  await signedSession('user');
+  const read = await noteRoute.GET(request('GET'), noteContext());
+  assert.equal(read.headers.get('ETag'), '"version-one"');
+  assert.equal(read.headers.get('X-Note-Version'), '"version-one"');
+  assert.equal(await read.text(), noteSource);
+  upstreamCalls = 0;
+  assert.equal((await noteRoute.PATCH(request('PATCH'), noteContext())).status, 403);
+  assert.equal((await noteRoute.DELETE(request('DELETE'), noteContext())).status, 403);
+  assert.equal(upstreamCalls, 0);
+  await signedSession('admin');
+  for (const method of ['PATCH', 'DELETE'] as const) {
+    assert.equal((await noteRoute[method](request(method, 'https://evil.invalid'), noteContext())).status, 403);
+    assert.equal((await noteRoute[method](request(method, undefined, null), noteContext())).status, 428);
+  }
+  assert.equal(upstreamCalls, 0);
+  const received: { method?: string; etag?: string | null }[] = [];
+  const currentFetch = globalThis.fetch;
+  globalThis.fetch = async (_input, init) => {
+    received.push({ method: init?.method, etag: new Headers(init?.headers).get('If-Match') });
+    return Response.json({ id: noteId, etag: '"version-two"' }, { headers: { ETag: '"version-two"' } });
+  };
+  try {
+    assert.equal((await noteRoute.PATCH(request('PATCH'), noteContext())).headers.get('ETag'), '"version-two"');
+    assert.equal((await noteRoute.DELETE(request('DELETE'), noteContext())).status, 200);
+    assert.deepEqual(received, [{ method: 'PATCH', etag: '"version-one"' }, { method: 'DELETE', etag: '"version-one"' }]);
+    globalThis.fetch = async () => Response.json({ error: 'note_conflict' }, { status: 412 });
+    assert.equal((await noteRoute.PATCH(request('PATCH'), noteContext())).status, 412);
+    assert.equal((await noteRoute.DELETE(request('DELETE'), noteContext())).status, 412);
+  } finally { globalThis.fetch = currentFetch; }
 });

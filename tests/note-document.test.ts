@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import MarkdownIt from 'markdown-it';
 import { NOTE_CATEGORY_OPTIONS } from '../src/lib/note-categories.ts';
-import { parseNoteDocument } from '../src/lib/note-document.ts';
+import { parseNoteDocument, setNoteHidden } from '../src/lib/note-document.ts';
 
 const source = '---\ntitle: "Vue: 组件笔记"\ndate: "2026-10-31"\ncategory: technology\n---\n\n## 示例\n\n```ts\nconst count = 1\n```';
 test('Markdown 文件元信息支持中文、冒号与 Windows 换行，正文保留代码', () => {
@@ -31,4 +31,15 @@ test('四个标签统一由配置提供，技术、宝可梦、日常、测试�
     assert.equal(parseNoteDocument(source.replace('category: technology', `category: ${option.value}`)).metadata.type, option.value);
   }
   assert.throws(() => parseNoteDocument(source.replace('category: technology', 'category: frontend')));
+});
+
+test('隐藏字段兼容旧文件，切换保留正文并拒绝非法状态', () => {
+  assert.equal(parseNoteDocument(source).metadata.hidden, undefined);
+  const hidden = setNoteHidden(source, true);
+  assert.equal(parseNoteDocument(hidden).metadata.hidden, true);
+  assert.equal(parseNoteDocument(hidden).body, parseNoteDocument(source).body);
+  assert.equal(parseNoteDocument(setNoteHidden(hidden, false)).metadata.hidden, undefined);
+  for (const value of ['yes', '1', 'null', '[true]', '{value: true}']) {
+    assert.throws(() => parseNoteDocument(source.replace('category: technology', `category: technology\nhidden: ${value}`)));
+  }
 });

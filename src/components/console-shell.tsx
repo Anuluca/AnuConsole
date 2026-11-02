@@ -2,6 +2,7 @@
 
 import { ProgressLink as Link } from "./route-progress";
 import { openDialog, closeDialog } from "@/lib/dialog";
+import { useDialogBackdrop } from "./use-dialog-backdrop";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { usePathname } from "next/navigation";
@@ -69,6 +70,7 @@ export function ConsoleShell({ children, user }: { children: React.ReactNode; us
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
   }, []);
+  const menuBackdrop = useDialogBackdrop(() => { void closeMenu(); });
   const group = routes.find(route => route.children?.some(child => child.href === pathname));
   const current = group?.children?.find(route => route.href === pathname) ?? routes.find(route => route.href === pathname) ?? routes[0];
   const subtitle = current.subtitle;
@@ -115,7 +117,7 @@ export function ConsoleShell({ children, user }: { children: React.ReactNode; us
         </button>
       </div>
     </header>
-    <dialog id="mobile-navigation" className="mobile-menu" aria-labelledby="mobile-navigation-title" ref={menu}
+    <dialog id="mobile-navigation" {...menuBackdrop} className="mobile-menu" aria-labelledby="mobile-navigation-title" ref={menu}
       onCancel={event => {
         // 退出确认框嵌在菜单中，只处理菜单自身的事件，避免 Escape 同时关闭两层。
         if (event.target !== event.currentTarget) return;

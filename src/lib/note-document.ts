@@ -8,12 +8,14 @@ export interface NoteMetadata {
   time: string
   type: NoteCategory
   image?: string
+  hidden?: boolean
 }
 export interface NoteSummary extends NoteMetadata {
   id: string
   path: string
   etag?: string
 }
+export const NOTE_ASSET_BASE = 'https://assets.anuluca.com/'
 export const MAX_NOTE_BYTES = 256 * 1024
 
 // 元信息与正文保存在同一个 Markdown 文件中；R2 元数据只是列表索引。
@@ -38,10 +40,10 @@ export function parseNoteDocument(source: string): {
     throw new Error('元信息格式错误')
   if (
     Object.keys(data).some(
-      (key) => !['title', 'date', 'category', 'cover'].includes(key)
+      (key) => !['title', 'date', 'category', 'cover', 'hidden'].includes(key)
     )
   )
-    throw new Error('元信息仅支持 title、date、category、cover')
+    throw new Error('元信息仅支持 title、date、category、cover、hidden')
   if (
     typeof data.title !== 'string' ||
     !data.title.trim() ||
@@ -63,6 +65,8 @@ export function parseNoteDocument(source: string): {
       !/^https:\/\/assets\.anuluca\.com\/[^\s]+$/.test(data.cover))
   )
     throw new Error('封面需要使用线上 R2 图片链接')
+  if (data.hidden !== undefined && !['true', 'false'].includes(data.hidden))
+    throw new Error('hidden 只能是 true 或 false')
   const body = normalized.slice(match[0].length).trim()
   if (!body) throw new Error('笔记正文不能为空')
   return {
@@ -70,8 +74,21 @@ export function parseNoteDocument(source: string): {
       title: data.title.trim(),
       time: data.date,
       type: data.category,
-      ...(data.cover ? { image: data.cover } : {}),
+      ...(data.hidden === 'true' ? { hidden: true } : {}),
+      ...(data.cover ? { image: NOTE_ASSET_BASE + data.cover.slice(NOTE_ASSET_BASE.length) } : {}),
     },
     body,
   }
+}
+
+// 仅更新元信息，保留完整正文；调用方仍须携带读取时的版本执行条件写入。
+export function setNoteHidden(source: string, hidden: boolean): string {
+  parseNoteDocument(source)
+  const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
+  const match = normalized.match(/^---\n([\s\S]*?)\n---(?:\n|$)/)!
+  const document = parseDocument(match[1], { schema: 'failsafe', uniqueKeys: true })
+  document.set('hidden', String(hidden))
+  const updated = `---\n${document.toString()}---\n${normalized.slice(match[0].length)}`
+  parseNoteDocument(updated)
+  return updated
 }

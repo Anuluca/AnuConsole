@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { openDialog, closeDialog } from "@/lib/dialog";
 import { logout } from "@/app/actions";
+import { useDialogBackdrop } from "./use-dialog-backdrop";
 
 type Phase = "closed" | "entering" | "open" | "leaving";
 
@@ -39,6 +40,7 @@ export function LogoutButton() {
 
   const [, action, pending] = useActionState(async () => { await dismiss(); await logout(); }, undefined);
   const busy = pending || phase === "leaving";
+  const backdrop = useDialogBackdrop(() => { if (!busy) void dismiss(); });
 
   useEffect(() => {
     const element = dialog.current;
@@ -61,7 +63,7 @@ export function LogoutButton() {
 
   return <>
     <button className="logout" type="button" onClick={() => setOpen(true)}>退出 <span aria-hidden="true">↗</span></button>
-    <dialog ref={dialog} data-phase={phase} className="confirm-dialog" role="alertdialog" aria-labelledby={headingId} aria-describedby={descriptionId}
+    <dialog ref={dialog} {...backdrop} data-phase={phase} className="confirm-dialog" role="alertdialog" aria-labelledby={headingId} aria-describedby={descriptionId}
       onCancel={event => { event.preventDefault(); if (!busy) void dismiss(); }}
       onClose={() => { setOpen(false); setPhase("closed"); closing.current = false; }}>
       <h2 id={headingId}>退出登录？</h2>

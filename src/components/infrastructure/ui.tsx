@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { openDialog, closeDialog } from "@/lib/dialog";
+import { useDialogBackdrop } from "@/components/use-dialog-backdrop";
 import { infrastructureMessages } from "@/lib/infrastructure-contract";
 import { ManagementButton } from "./management-button";
 import { LoadingIndicator } from "../loading-indicator";
@@ -84,8 +85,8 @@ export function ManagementSelect({ label, value, options, onChange, disabled = f
   </div>;
 }
 
-export function ManagementModal({ title, children, footer, onClose, busy = false, description, closeRequested = false, danger = false }: {
-  title: string; children: ReactNode; footer?: ReactNode; onClose: () => void; busy?: boolean; description?: string; closeRequested?: boolean; danger?: boolean;
+export function ManagementModal({ title, children, footer, onClose, busy = false, description, closeRequested = false, danger = false, className = "" }: {
+  title: string; children: ReactNode; footer?: ReactNode; onClose: () => void; busy?: boolean; description?: string; closeRequested?: boolean; danger?: boolean; className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const motion = useRef<Animation | null>(null);
@@ -112,7 +113,8 @@ export function ManagementModal({ title, children, footer, onClose, busy = false
     onClose();
   }
   useEffect(() => { if (closeRequested && !busy) void dismiss(); });
-  return <dialog ref={ref} className={`infra-modal${danger ? " infra-modal-danger" : ""}`} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={event => { event.preventDefault(); void dismiss(); }}>
+  const backdrop = useDialogBackdrop(() => { void dismiss(); });
+  return <dialog ref={ref} {...backdrop} className={`infra-modal${danger ? " infra-modal-danger" : ""} ${className}`} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={event => { event.preventDefault(); event.stopPropagation(); void dismiss(); }}>
     <header className="infra-modal-header"><h2 id={titleId}>{title}</h2><button type="button" className="infra-icon-button" disabled={busy} aria-label="关闭弹窗" onClick={() => { void dismiss(); }}>×</button></header>
     <div className="infra-modal-content">{description && <p className="infra-muted" id={descriptionId}>{description}</p>}{children}</div>
     {footer && <footer className="infra-modal-footer" onClickCapture={event => {

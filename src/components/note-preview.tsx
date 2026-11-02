@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent, type MouseEvent, type KeyboardEvent } from 'react';
 import { createNoteEntrance } from '@/lib/note-renderer/noteEntrance';
 import { createImageCincoHover } from '@/lib/note-renderer/imageCincoHover';
+import { selectNoteWidgetTab } from '@/lib/note-renderer/noteWidgets';
 import { renderNoteMarkdown } from '@/lib/note-renderer/renderNoteMarkdown';
 import { handleNoteTooltipEnter, handleNoteTooltipLeave, handleNoteTooltipAnimationEnd } from '@/lib/note-renderer/noteTooltip';
 import { NOTE_CATEGORIES, type NoteCategory } from '@/lib/note-categories';
@@ -36,8 +37,9 @@ export function NotePreview({ title, category, date, body, entrance = false }: {
   function follow(event: MouseEvent<HTMLDivElement>) {
     if (window.getSelection()?.isCollapsed === false) { event.preventDefault(); return; }
     const target = event.target as HTMLElement;
+    if (selectNoteWidgetTab(target)) { hover.current?.stop(); return; }
     if (target instanceof HTMLImageElement) {
-      event.preventDefault(); hover.current?.stop(); setImage({ src: target.src, alt: target.alt }); return;
+      event.preventDefault(); hover.current?.stop(); setImage({ src: target.dataset.noteOriginal || target.src, alt: target.alt }); return;
     }
     const link = target.closest<HTMLAnchorElement>('a[href^="#"]');
     if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -50,11 +52,11 @@ export function NotePreview({ title, category, date, body, entrance = false }: {
   }
   function imageKey(event: KeyboardEvent<HTMLDivElement>) {
     if (!['Enter', ' '].includes(event.key) || !(event.target instanceof HTMLImageElement)) return;
-    event.preventDefault(); hover.current?.stop(); setImage({ src: event.target.src, alt: event.target.alt });
+    event.preventDefault(); hover.current?.stop(); setImage({ src: event.target.dataset.noteOriginal || event.target.src, alt: event.target.alt });
   }
   return <>
     <article ref={reader} className="note-reader no-rem" data-note-enter={entrance ? 'pending' : undefined}>
-      <header className="note-reader__header"><h1>{title || '笔记标题'}</h1><div className="note-reader__meta"><span className="note-reader__category">[<span className="note-reader__category-text">{NOTE_CATEGORIES[category].label.en}</span>]</span><time dateTime={date}>{date.replace(/-/g, '/')}</time></div></header>
+      <header className="note-reader__header"><div className="note-reader__heading"><h1>{title || '笔记标题'}</h1><div className="note-reader__meta"><span className="note-reader__category">[<span className="note-reader__category-text">{NOTE_CATEGORIES[category].label.en}</span>]</span><time dateTime={date}>{date.replace(/-/g, '/')}</time></div></div></header>
       <div className="note-markdown" onClick={follow} onKeyDown={imageKey} onPointerOver={event => { hoverImage(event, true); handleNoteTooltipEnter(event.nativeEvent); }} onPointerOut={event => { hoverImage(event, false); handleNoteTooltipLeave(event.nativeEvent); }} onFocus={event => handleNoteTooltipEnter(event.nativeEvent)} onBlur={event => handleNoteTooltipLeave(event.nativeEvent)} onAnimationEnd={event => handleNoteTooltipAnimationEnd(event.nativeEvent)} onPointerCancel={() => hover.current?.stop()} dangerouslySetInnerHTML={{ __html: html }} />
     </article>
     {image && <ManagementModal title={image.alt || '图片预览'} className="notes-image-modal" onClose={() => setImage(null)} footer={<ManagementButton icon="close" data-close-modal>关闭</ManagementButton>}><img src={image.src} alt={image.alt} /></ManagementModal>}

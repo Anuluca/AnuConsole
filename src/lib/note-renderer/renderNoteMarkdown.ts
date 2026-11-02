@@ -19,8 +19,10 @@ import sup from 'markdown-it-sup'
 import taskLists from 'markdown-it-task-lists'
 import texmath from 'markdown-it-texmath'
 
+import contactLinks, { WECHAT_ID } from './contactLinks'
 import { renderNoteCodeLines, wrapNoteCodeFrame } from './noteCodeLines'
 import { noteHexoTags } from './noteHexoTags'
+import { type NoteWidget, noteWidgets } from './noteWidgets'
 
 Object.entries({ javascript, xml, css, json, typescript }).forEach(
   ([name, language]) => hljs.registerLanguage(name, language)
@@ -59,6 +61,7 @@ const markdown = new MarkdownIt({
     },
   })
   .use(noteHexoTags)
+  .use(noteWidgets, { links: contactLinks, wechatId: WECHAT_ID })
 
 for (const name of ['note', 'tip', 'attention', 'warning'])
   markdown.use(container, name)
@@ -218,3 +221,9 @@ markdown.renderer.rules.footnote_ref = (
 }
 
 export const renderNoteMarkdown = (body: string) => markdown.render(body)
+
+// Vue 阅读器只挂载白名单组件；Markdown 始终不作为 Vue 模板执行。
+export const renderNoteContent = (body: string, depth = 0) => {
+  const env = { noteWidgets: [] as NoteWidget[], noteWidgetDepth: depth }
+  return { html: markdown.render(body, env), widgets: env.noteWidgets }
+}

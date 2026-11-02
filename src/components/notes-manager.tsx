@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FeatureSwitch } from './feature-switch';
 import { NotePreview } from './note-preview';
+import { NoteBlockInserter } from './note-block-inserter';
 import { MAX_NOTE_BYTES, NOTE_ASSET_BASE, parseNoteDocument, setNoteHidden, type NoteCategory, type NoteSummary } from '@/lib/note-document';
 import { NOTE_CATEGORIES, NOTE_CATEGORY_OPTIONS, DEFAULT_NOTE_CATEGORY } from '@/lib/note-categories';
 import { ManagementButton } from './infrastructure/management-button';
@@ -42,6 +43,7 @@ export function NotesManager({ canEdit }: { canEdit: boolean }) {
   const [deleteTarget, setDeleteTarget] = useState<NoteSummary | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const [deleteDone, setDeleteDone] = useState(false);
+  const bodyInput = useRef<HTMLTextAreaElement>(null);
   const publishId = useRef<string | null>(null);
   const sending = useRef(false);
   const attemptedSource = useRef('');
@@ -187,6 +189,12 @@ export function NotesManager({ canEdit }: { canEdit: boolean }) {
       {error && <p role="alert" className="notes-error">{error}</p>}
       <div className="notes-editor-status">{notice ? <p role="status">{notice}</p> : <span />}<span className="notes-hint">最大 256 KB</span></div>
       <div className="notes-editor-tools">
+        <NoteBlockInserter disabled={busy} onInsert={block => {
+          const input = bodyInput.current;
+          const start = input?.selectionStart ?? form.body.length;
+          const end = input?.selectionEnd ?? start;
+          patchForm({ body: form.body.slice(0, start) + block + form.body.slice(end) });
+        }} />
         <label className="notes-import"><span>导入 .md</span><input aria-label="导入 Markdown 文件" type="file" accept=".md,text/markdown" disabled={busy} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void importFile(file); }} /></label>
         <div className="notes-actions">{editing && <><ManagementButton icon="details" disabled={busy} onClick={() => void openNote(editing.id)}>预览线上版本</ManagementButton><ManagementButton icon="refresh" disabled={busy} onClick={() => void openNote(editing.id, true)}>重新载入</ManagementButton></>}</div>
       </div>
@@ -198,7 +206,7 @@ export function NotesManager({ canEdit }: { canEdit: boolean }) {
         <div className="notes-visibility"><span>隐藏笔记</span><FeatureSwitch label="隐藏笔记" checked={form.hidden} disabled={busy} onChange={hidden => patchForm({ hidden })} /><span className="notes-hint">隐藏后不在 Anutrium 显示</span></div>
       </fieldset>
       <div className="notes-editor-grid">
-        <label className="notes-editor">Markdown 正文<textarea disabled={busy} value={form.body} spellCheck={false} onChange={event => patchForm({ body: event.target.value })} placeholder="## 开始记录" /></label>
+        <label className="notes-editor">Markdown 正文<textarea aria-label="Markdown 正文" ref={bodyInput} disabled={busy} value={form.body} spellCheck={false} onChange={event => patchForm({ body: event.target.value })} placeholder="## 开始记录" /></label>
         <section className="notes-preview-column" aria-label="Markdown 预览"><h2 className="notes-preview-heading">预览</h2><div className="notes-preview notes-reader-shell"><NotePreview title={form.title} category={form.category} date={form.date} body={form.body} /></div></section>
       </div>
       </ManagementModal>}

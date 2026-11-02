@@ -155,7 +155,7 @@ test('导入 Markdown 后新增笔记仍走独立创建接口', async ({ page })
   await page.getByLabel('导入 Markdown 文件').setInputFiles({ name: 'imported.md', mimeType: 'text/markdown', buffer: Buffer.from(source('导入的新笔记')) });
   await expect(page.getByLabel('标题', { exact: true })).toHaveValue('导入的新笔记');
   await page.getByRole('radio', { name: '宝可梦', exact: true }).check();
-  await page.getByLabel('封面路径（可选）').fill('Island/notes/markdown-it-demo/minion.png');
+  await page.getByLabel('封面路径（可选）').fill('Island/notes/other/minion.png');
   await page.getByRole('button', { name: '发布笔记', exact: true }).click();
   await expect(page.locator('.notes-row')).toHaveCount(3);
   expect(state.writes).toHaveLength(1);
@@ -163,7 +163,7 @@ test('导入 Markdown 后新增笔记仍走独立创建接口', async ({ page })
   expect(state.writes[0].etag).toBeUndefined();
   expect(records.get(state.writes[0].id)?.source).toContain('导入的新笔记');
   expect(records.get(state.writes[0].id)?.source).toContain('category: pokemon');
-  expect(parseNoteDocument(records.get(state.writes[0].id)!.source).metadata.image).toBe('https://assets.anuluca.com/Island/notes/markdown-it-demo/minion.png');
+  expect(parseNoteDocument(records.get(state.writes[0].id)!.source).metadata.image).toBe('https://assets.anuluca.com/Island/notes/other/minion.png');
 });
 
 

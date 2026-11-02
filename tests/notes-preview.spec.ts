@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { openNavigation } from './helpers/navigation';
 
 const id = '5d357fe2-81f2-434b-a990-a51efa4a1f91';
-const body = `正文与**加粗文字**，以及*斜体文字*。\n\n脚注示例[^first]。\n\n> 引用内容\n\n## 二级标题\n\n\`\`\`js\n// 示例注释\nconst message = "${'long-code-'.repeat(40)}";\nconsole.log(message);\n\`\`\`\n\n![图片测试](https://assets.anuluca.com/Island/notes/markdown-it-demo/minion.png)\n\n[^first]: Footnote **can have markup**\n\n    第二个脚注段落。`;
+const body = `正文与**加粗文字**，以及*斜体文字*。\n\n脚注示例[^first]。\n\n> 引用内容\n\n## 二级标题\n\n\`\`\`js\n// 示例注释\nconst message = "${'long-code-'.repeat(40)}";\nconsole.log(message);\n\`\`\`\n\n![图片测试](https://assets.anuluca.com/Island/notes/other/minion.png)\n\n[^first]: Footnote **can have markup**\n\n    第二个脚注段落。`;
 const source = `---\ntitle: "脚注渲染演示"\ndate: "2026-11-01"\ncategory: test\n---\n\n${body}\n`;
 const note = { id, title: '脚注渲染演示', time: '2026-11-01', type: 'test', etag: '"v1"', path: `/atrium/notes?category=test&note=${id}` };
 async function mock(page: Page, consoleApp: boolean) {

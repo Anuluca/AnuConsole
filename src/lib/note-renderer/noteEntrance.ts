@@ -150,7 +150,7 @@ export function createNoteEntrance(
 
     const bounds = header.getBoundingClientRect()
     const viewport = frame.getBoundingClientRect()
-    // 长标题优先完整容纳在视口内；常规标题以 2 倍从中央缩回原始排版。
+    // 长标题优先完整容纳在视口内；常规标题以 2.2 倍从中央缩回原始排版。
     const titleRange = document.createRange()
     titleRange.selectNodeContents(title)
     const metaBounds = Array.from(meta.children).map((child) =>
@@ -162,7 +162,7 @@ export function createNoteEntrance(
         Math.min(...metaBounds.map((rect) => rect.left))
     )
     const scale = Math.min(
-      2,
+      2.2,
       (frame.clientWidth - 32) / Math.max(1, textWidth),
       (frame.clientHeight - 32) / bounds.height
     )
@@ -213,6 +213,12 @@ export function createNoteEntrance(
         .set(title, {
           clearProps: 'maskImage,webkitMaskImage,--note-title-reveal',
         })
+        // 在擦入可见阶段同步闪烁两次，不等待遮罩擦入结束。
+        .set(title, { opacity: 1 }, 0.42)
+        .set(title, { opacity: 0 }, 0.48)
+        .set(title, { opacity: 1 }, 0.54)
+        .set(title, { opacity: 0 }, 0.6)
+        .set(title, { clearProps: 'opacity' }, 0.66)
         // 擦入的缓动尾段已几乎没有视觉变化，让元信息在收尾时衔接出现。
         .addLabel('meta', 1.08)
         .call(

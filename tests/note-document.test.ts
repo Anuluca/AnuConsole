@@ -25,8 +25,8 @@ test('后台预览禁用 HTML 与脚本协议，同时保留代码块与表格',
   assert.match(html, /<code class="language-ts">/);
 });
 
-test('四个标签统一由配置提供，技术、宝可梦、日常、测试均可写入 Markdown，前端标签不再可用', () => {
-  assert.deepEqual(NOTE_CATEGORY_OPTIONS.map(option => option.label), ['技术', '宝可梦', '日常', '测试']);
+test('所有配置分类均可写入 Markdown，旧前端标签不再可用', () => {
+  assert.deepEqual(NOTE_CATEGORY_OPTIONS.map(option => option.label), ['技术', '宝可梦', '日常', '设计', '测试']);
   for (const option of NOTE_CATEGORY_OPTIONS) {
     assert.equal(parseNoteDocument(source.replace('category: technology', `category: ${option.value}`)).metadata.type, option.value);
   }

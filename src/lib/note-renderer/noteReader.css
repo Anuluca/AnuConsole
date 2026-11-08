@@ -864,17 +864,16 @@
 }
 
 .note-reader.no-rem .note-markdown table.note-image-table {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-  overflow: visible;
+  display: block;
+  width: fit-content;
+  overflow-x: auto;
   margin: 0 0 24px;
 }
 .note-reader.no-rem .note-markdown table.note-image-table thead {
   display: none;
 }
 .note-reader.no-rem .note-markdown table.note-image-table td {
-  padding: 6px 2px;
+  padding: 6px 8px;
   text-align: center;
   vertical-align: top;
 }
@@ -897,9 +896,9 @@
   object-fit: contain;
 }
 .note-reader.no-rem .note-markdown table.note-image-table .note-image-label {
-  font-size: 10px;
+  font-size: 20px;
   line-height: 1.4;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 .note-table-tooltip.no-rem {
   position: fixed;
@@ -927,21 +926,5 @@
 @media (prefers-reduced-motion: reduce) {
   .note-table-tooltip.no-rem {
     animation: none;
-  }
-}
-@media screen and (max-aspect-ratio: 1) {
-  .note-reader.no-rem .note-markdown table.note-image-table {
-    display: block;
-  }
-  .note-reader.no-rem .note-markdown table.note-image-table tbody {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .note-reader.no-rem .note-markdown table.note-image-table tr {
-    display: contents;
-  }
-  .note-reader.no-rem .note-markdown table.note-image-table td {
-    display: block;
-    min-width: 0;
   }
 }

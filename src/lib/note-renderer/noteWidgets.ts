@@ -4,7 +4,7 @@ import { getCardMobileThumbnailUrl, getCardThumbnailUrl } from './imageVariant'
 
 export type NoteWidget =
   | { type: 'social-links'; caption?: string }
-  | { type: 'gallery'; items: { url: string; title: string }[] }
+  | { type: 'gallery'; items: { url: string; title: string }[]; columns?: number }
   | { type: 'tabs'; pages: { title: string; body: string }[] }
 export interface NoteWidgetEnvironment {
   noteWidgets?: NoteWidget[]
@@ -143,9 +143,14 @@ export function noteWidgets(
         )
       )
         return renderBody()
+      const columnOption = /^columns=([1-6])$/.exec(token.meta.title)
+      const columns = columnOption ? Number(columnOption[1]) : undefined
       if (environment.noteWidgets)
-        return placeholder({ type: 'gallery', items })
-      return `<div class="note-widget-gallery">${items
+        return placeholder({ type: 'gallery', items, ...(columns ? { columns } : {}) })
+      const layout = columns
+        ? ` style="grid-template-columns:repeat(${columns},minmax(0,1fr))"`
+        : ''
+      return `<div class="note-widget-gallery"${layout}>${items
         .map(
           (item) =>
             `<figure><picture><source media="(max-width: 768px)" srcset="${escape(

@@ -928,3 +928,18 @@
     animation: none;
   }
 }
+@media screen and (aspect-ratio > 1) {
+  .note-reader.no-rem .note-markdown table.note-image-table tbody {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(max-content, 1fr));
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table tr {
+    display: contents;
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table td {
+    display: block;
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table td:empty {
+    display: none;
+  }
+}

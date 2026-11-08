@@ -892,8 +892,8 @@
   display: none;
 }
 .note-reader.no-rem .note-markdown table.note-image-table img {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   object-fit: contain;
 }
 .note-reader.no-rem .note-markdown table.note-image-table .note-image-label {

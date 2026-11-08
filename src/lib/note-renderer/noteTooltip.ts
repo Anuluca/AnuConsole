@@ -6,6 +6,14 @@ export function handleNoteTooltipEnter(event: Event) {
   const target = (event.target as Element).closest(selector)
   if (!target) return
   if (target.closest('.note-image-table')) {
+    // 聚焦可能先触发浏览器自动滚动，待该帧滚动完成后再显示提示。
+    if (event.type === 'focusin' || event.type === 'focus') {
+      requestAnimationFrame(() => {
+        if (target.isConnected && document.activeElement === target)
+          showTableTooltip(target as HTMLElement)
+      })
+      return
+    }
     showTableTooltip(target as HTMLElement)
     return
   }

@@ -892,8 +892,8 @@
   display: none;
 }
 .note-reader.no-rem .note-markdown table.note-image-table img {
-  width: 32px;
-  height: 32px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 .note-reader.no-rem .note-markdown table.note-image-table .note-image-label {
@@ -927,5 +927,21 @@
 @media (prefers-reduced-motion: reduce) {
   .note-table-tooltip.no-rem {
     animation: none;
+  }
+}
+@media screen and (max-aspect-ratio: 1) {
+  .note-reader.no-rem .note-markdown table.note-image-table {
+    display: block;
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table tbody {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table tr {
+    display: contents;
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table td {
+    display: block;
+    min-width: 0;
   }
 }

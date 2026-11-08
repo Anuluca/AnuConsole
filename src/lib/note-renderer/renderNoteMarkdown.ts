@@ -208,8 +208,8 @@ markdown.renderer.rules.image = (tokens, index, options, env, renderer) => {
     const token = tokens[index]
     token.attrSet('loading', 'lazy')
     token.attrSet('decoding', 'async')
-    token.attrSet('width', '32')
-    token.attrSet('height', '32')
+    token.attrSet('width', '64')
+    token.attrSet('height', '64')
     return `${renderImage(
       tokens,
       index,

@@ -31,7 +31,7 @@ export function noteWidgets(
           state.eMarks[line]
         )
       const opening = lineAt(start).match(
-        /^(:{3,})\s+(gallery|pokemon-grid|tool-card|tabs|tab|social-links)(?:\s+(.+?))?\s*$/
+        /^(:{3,})\s+(gallery|tool-card|tabs|tab|social-links)(?:\s+(.+?))?\s*$/
       )
       if (!opening || state.sCount[start] - state.blkIndent >= 4) return false
       let last = start + 1
@@ -116,7 +116,7 @@ export function noteWidgets(
         })
         .join('')}</nav></div>\n`
     }
-    if (token.meta.type === 'gallery' || token.meta.type === 'pokemon-grid') {
+    if (token.meta.type === 'gallery') {
       const parsed = markdown.parse(token.content, {})
       const inline = parsed.filter((part) => part.type === 'inline')
       // 只接受独立图片；混入正文时保留原文，避免静默丢失内容。
@@ -138,9 +138,6 @@ export function noteWidgets(
           .map((image) => ({
             url: image.attrGet('src') || '',
             title: image.content,
-            ...(token.meta.type === 'pokemon-grid'
-              ? { description: image.attrGet('title') || '' }
-              : {}),
           }))
       )
       if (
@@ -150,21 +147,6 @@ export function noteWidgets(
         )
       )
         return renderBody()
-      if (token.meta.type === 'pokemon-grid')
-        return `<div class="note-pokemon-grid" role="list" aria-label="全国图鉴顺序的宝可梦速览">${items
-          .map(
-            (item) =>
-              `<figure role="listitem"><abbr tabindex="0" title="${escape(
-                item.description || item.title
-              )}" aria-label="${escape(
-                item.description || item.title
-              )}"><img src="${escape(item.url)}" alt="${escape(
-                item.title
-              )}" width="96" height="96" loading="lazy" decoding="async"><span>${escape(
-                item.title
-              )}</span></abbr></figure>`
-          )
-          .join('')}</div>\n`
       const columnOption = /^columns=([1-6])$/.exec(token.meta.title)
       const columns = columnOption ? Number(columnOption[1]) : undefined
       if (environment.noteWidgets)

@@ -863,37 +863,69 @@
   }
 }
 
-.note-reader.no-rem .note-markdown .note-pokemon-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+.note-reader.no-rem .note-markdown table.note-image-table {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  overflow: visible;
   margin: 0 0 24px;
 }
-.note-reader.no-rem .note-markdown .note-pokemon-grid figure {
-  min-width: 0;
-  margin: 0;
+.note-reader.no-rem .note-markdown table.note-image-table thead {
+  display: none;
 }
-.note-reader.no-rem .note-markdown .note-pokemon-grid abbr {
-  display: grid;
-  justify-items: center;
-  padding: 4px;
-  border-radius: 4px;
+.note-reader.no-rem .note-markdown table.note-image-table td {
+  padding: 6px 2px;
+  text-align: center;
+  vertical-align: top;
+}
+.note-reader.no-rem .note-markdown table.note-image-table abbr[data-note-title] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-decoration: none;
   cursor: help;
 }
-.note-reader.no-rem .note-markdown .note-pokemon-grid abbr:focus-visible {
+.note-reader.no-rem .note-markdown table.note-image-table abbr[data-note-title]:focus-visible {
   outline: 1px solid var(--page-theme-color, #e23456);
 }
-.note-reader.no-rem .note-markdown .note-pokemon-grid img {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  image-rendering: pixelated;
+.note-reader.no-rem .note-markdown table.note-image-table abbr[data-note-title]::after {
+  display: none;
 }
-.note-reader.no-rem .note-markdown .note-pokemon-grid span {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.5;
-  text-align: center;
+.note-reader.no-rem .note-markdown table.note-image-table img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.note-reader.no-rem .note-markdown table.note-image-table .note-image-label {
+  font-size: 10px;
+  line-height: 1.4;
   overflow-wrap: anywhere;
+}
+.note-table-tooltip.no-rem {
+  position: fixed;
+  inset: auto;
+  z-index: 2147483647;
+  margin: 0;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color-solid, #0b070f);
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  pointer-events: none;
+  animation: anutriumCrtOn 460ms cubic-bezier(0.19, 1, 0.22, 1) both;
+}
+.note-table-tooltip.no-rem.is-tooltip-closing {
+  animation: anutriumCrtOff 420ms cubic-bezier(0.2, 1, 0.22, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-table-tooltip.no-rem {
+    animation: none;
+  }
 }

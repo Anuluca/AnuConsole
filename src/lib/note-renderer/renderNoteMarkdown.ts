@@ -131,16 +131,18 @@ markdown.inline.ruler.before(
     if (!silent) {
       const token = state.push('html_inline', '', 0)
       const title = match[3]
-        ? ` title="${markdown.utils.escapeHtml(match[3].slice(1, -1))}"`
+        ? ` title="${markdown.utils.escapeHtml(
+            markdown.utils.unescapeAll(match[3].slice(1, -1))
+          )}"`
         : ''
       const tag = match[2].toLowerCase()
       // 自定义说明不依赖浏览器 title 提示延迟，同时提供键盘与屏幕阅读器描述。
       const attributes =
         /^(abbr|acronym)$/.test(tag) && match[3]
           ? ` data-note-title="${markdown.utils.escapeHtml(
-              match[3].slice(1, -1)
+              markdown.utils.unescapeAll(match[3].slice(1, -1))
             )}" tabindex="0" aria-label="${markdown.utils.escapeHtml(
-              match[3].slice(1, -1)
+              markdown.utils.unescapeAll(match[3].slice(1, -1))
             )}"`
           : title
       token.content = `<${match[1]}${tag}${attributes}>`
@@ -168,8 +170,56 @@ markdown.renderer.rules.abbr_open = (
   return renderer.renderToken(tokens, index, options)
 }
 
+// 图片表格沿用标准 Markdown；空表头只负责分列，不占用展示高度。
+markdown.renderer.rules.table_open = (
+  tokens,
+  index,
+  options,
+  _env,
+  renderer
+) => {
+  let hasImage = false
+  let imageOnly = true
+  for (
+    let i = index + 1;
+    i < tokens.length && tokens[i].type !== 'table_close';
+    i++
+  ) {
+    const token = tokens[i]
+    if (token.type !== 'inline') continue
+    const containsImage =
+      token.children?.some((child) => child.type === 'image') || false
+    hasImage ||= containsImage
+    if (token.content.trim() && !containsImage) imageOnly = false
+  }
+  if (hasImage && imageOnly) {
+    tokens[index].attrJoin('class', 'note-image-table')
+  }
+  return renderer.renderToken(tokens, index, options)
+}
+
 const renderImage = markdown.renderer.rules.image!
 markdown.renderer.rules.image = (tokens, index, options, env, renderer) => {
+  const previous = tokens[index - 1]
+  if (
+    previous?.type === 'html_inline' &&
+    /^<abbr data-note-title=/.test(previous.content)
+  ) {
+    const token = tokens[index]
+    token.attrSet('loading', 'lazy')
+    token.attrSet('decoding', 'async')
+    token.attrSet('width', '32')
+    token.attrSet('height', '32')
+    return `${renderImage(
+      tokens,
+      index,
+      options,
+      env,
+      renderer
+    )}<span class="note-image-label">${markdown.utils.escapeHtml(
+      token.content
+    )}</span>`
+  }
   tokens[index].attrSet('loading', 'lazy')
   tokens[index].attrSet('decoding', 'async')
   tokens[index].attrSet('role', 'button')

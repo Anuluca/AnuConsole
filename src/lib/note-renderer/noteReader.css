@@ -862,3 +862,38 @@
     visibility: hidden;
   }
 }
+
+.note-reader.no-rem .note-markdown .note-pokemon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0 0 24px;
+}
+.note-reader.no-rem .note-markdown .note-pokemon-grid figure {
+  min-width: 0;
+  margin: 0;
+}
+.note-reader.no-rem .note-markdown .note-pokemon-grid abbr {
+  display: grid;
+  justify-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: help;
+}
+.note-reader.no-rem .note-markdown .note-pokemon-grid abbr:focus-visible {
+  outline: 1px solid var(--page-theme-color, #e23456);
+}
+.note-reader.no-rem .note-markdown .note-pokemon-grid img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.note-reader.no-rem .note-markdown .note-pokemon-grid span {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

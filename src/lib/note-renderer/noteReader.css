@@ -730,6 +730,8 @@
 }
 .note-reader.no-rem .note-markdown table {
   display: block;
+  width: fit-content;
+  margin-inline: auto;
   max-width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
@@ -867,7 +869,7 @@
   display: block;
   width: fit-content;
   overflow-x: auto;
-  margin: 0 0 24px;
+  margin: 0 auto 24px;
 }
 .note-reader.no-rem .note-markdown table.note-image-table thead {
   display: none;

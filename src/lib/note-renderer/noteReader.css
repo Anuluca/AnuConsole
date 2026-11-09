@@ -867,17 +867,29 @@
 
 .note-reader.no-rem .note-markdown table.note-image-table {
   display: block;
-  width: fit-content;
+  width: 100%;
   overflow-x: auto;
   margin: 0 auto 24px;
 }
 .note-reader.no-rem .note-markdown table.note-image-table thead {
   display: none;
 }
+.note-reader.no-rem .note-markdown table.note-image-table tbody {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.note-reader.no-rem .note-markdown table.note-image-table tr {
+  display: contents;
+}
 .note-reader.no-rem .note-markdown table.note-image-table td {
-  padding: 6px 8px;
+  display: block;
+  min-width: 0;
+  padding: 6px 2px;
   text-align: center;
   vertical-align: top;
+}
+.note-reader.no-rem .note-markdown table.note-image-table td:empty {
+  display: none;
 }
 .note-reader.no-rem .note-markdown table.note-image-table abbr[data-note-title] {
   display: flex;
@@ -930,18 +942,20 @@
     animation: none;
   }
 }
-@media screen and (aspect-ratio > 1) {
-  .note-reader.no-rem .note-markdown table.note-image-table tbody {
-    display: grid;
-    grid-template-columns: repeat(10, minmax(max-content, 1fr));
-  }
-  .note-reader.no-rem .note-markdown table.note-image-table tr {
-    display: contents;
-  }
-  .note-reader.no-rem .note-markdown table.note-image-table td {
+@media screen and (max-aspect-ratio: 1) {
+  .note-reader.no-rem .note-image-label__index,
+  .note-reader.no-rem .note-image-label__name {
     display: block;
   }
-  .note-reader.no-rem .note-markdown table.note-image-table td:empty {
-    display: none;
+}
+@media screen and (aspect-ratio > 1) {
+  .note-reader.no-rem .note-markdown table.note-image-table {
+    width: fit-content;
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table tbody {
+    grid-template-columns: repeat(10, minmax(max-content, 1fr));
+  }
+  .note-reader.no-rem .note-markdown table.note-image-table td {
+    padding: 6px 8px;
   }
 }

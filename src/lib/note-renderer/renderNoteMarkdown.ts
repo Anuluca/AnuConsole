@@ -210,15 +210,21 @@ markdown.renderer.rules.image = (tokens, index, options, env, renderer) => {
     token.attrSet('decoding', 'async')
     token.attrSet('width', '96')
     token.attrSet('height', '96')
+    const parts = /^(#\d+)\s+(.+)$/.exec(token.content)
+    const label = parts
+      ? `<span class="note-image-label__index">${markdown.utils.escapeHtml(
+          parts[1]
+        )}</span> <span class="note-image-label__name">${markdown.utils.escapeHtml(
+          parts[2]
+        )}</span>`
+      : markdown.utils.escapeHtml(token.content)
     return `${renderImage(
       tokens,
       index,
       options,
       env,
       renderer
-    )}<span class="note-image-label">${markdown.utils.escapeHtml(
-      token.content
-    )}</span>`
+    )}<span class="note-image-label">${label}</span>`
   }
   tokens[index].attrSet('loading', 'lazy')
   tokens[index].attrSet('decoding', 'async')

@@ -1,0 +1,10 @@
+.monkey-manager { min-width: 0; }
+.monkey-manager h2 { margin: 0 0 12px; }
+.monkey-record { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 0; border-top: 1px solid var(--line); min-width: 0; }
+.monkey-record > div { min-width: 0; }
+.monkey-record h3 { overflow-wrap: anywhere; margin: 0 0 12px; }
+.monkey-record p { color: var(--muted); font: inherit; overflow-wrap: anywhere; }
+.monkey-record small { color: var(--muted); }
+.monkey-record > button { flex-shrink: 0; }
+.monkey-fulltext { white-space: pre-wrap; overflow-wrap: anywhere; font: 900 14px/1.9 Consolas, monospace; }
+@media (max-width: 800px) { .monkey-record { align-items: flex-start; flex-direction: column; } }

@@ -40,11 +40,14 @@ const route = await import("../src/app/api/features/home/route.ts");
 const likesRoute = await import("../src/app/api/data/flora-likes/route.ts");
 const notesRoute = await import("../src/app/api/notes/route.ts");
 const noteRoute = await import("../src/app/api/notes/[id]/route.ts");
+const monkeyRoute = await import("../src/app/api/monkey-articles/route.ts");
+const monkeyItemRoute = await import("../src/app/api/monkey-articles/[id]/route.ts");
 const actions = await import("../src/app/actions.ts");
 const originalFetch = globalThis.fetch;
 let upstreamCalls = 0;
 globalThis.fetch = async (input, init) => {
   upstreamCalls++;
+  if (String(input).includes('/admin/monkey-articles')) return Response.json({ articles: [], nextCursor: null }, { headers: { ETag: 'W/\"v1\"', 'X-Article-Version': '\"v1\"' } });
   if (String(input).includes('/admin/notes')) {
     if (init?.method === 'GET' && String(input).endsWith(noteId)) return new Response(noteSource, { headers: { 'Content-Type': 'text/markdown', ETag: 'W/"version-one"', 'X-Note-Version': '"version-one"' } });
     return Response.json({ notes: [], nextCursor: null }, { headers: { ETag: '"version-two"' } });
@@ -244,4 +247,26 @@ test('笔记编辑和删除始终校验管理员、同源和版本，读取代�
     assert.equal((await noteRoute.PATCH(request('PATCH'), noteContext())).status, 412);
     assert.equal((await noteRoute.DELETE(request('DELETE'), noteContext())).status, 412);
   } finally { globalThis.fetch = currentFetch; }
+});
+
+
+test("猴子档案读取需要登录，删除校验管理员、同源与版本", async () => {
+  const id = "8200000000000-00000000-0000-4000-8000-000000000001";
+  const context = { params: Promise.resolve({ id }) };
+  const list = new Request("https://console.example.invalid/api/monkey-articles");
+  const deletion = (origin = "https://console.example.invalid", etag = '\"v1\"') => new Request(`${list.url}/${id}`, { method: "DELETE", headers: { Origin: origin, "If-Match": etag } });
+  await assert.rejects(() => monkeyRoute.GET(list), /REDIRECT:\/login/);
+  await signedSession("user");
+  assert.equal((await monkeyRoute.GET(list)).status, 200);
+  assert.equal((await monkeyItemRoute.GET(list, context)).headers.get("ETag"), '"v1"');
+  const before = upstreamCalls;
+  assert.equal((await monkeyItemRoute.DELETE(deletion(), context)).status, 403);
+  assert.equal(upstreamCalls, before);
+  await signedSession("admin");
+  assert.equal((await monkeyItemRoute.DELETE(deletion("https://evil.invalid"), context)).status, 403);
+  assert.equal((await monkeyItemRoute.DELETE(deletion(undefined, ""), context)).status, 428);
+  assert.equal((await monkeyItemRoute.GET(list, { params: Promise.resolve({id:"bad"}) })).status, 404);
+  assert.equal(upstreamCalls, before);
+  assert.equal((await monkeyItemRoute.DELETE(deletion(), context)).status, 200);
+  assert.equal(upstreamCalls, before + 1);
 });

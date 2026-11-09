@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent, type MouseEven
 import { createNoteEntrance } from '@/lib/note-renderer/noteEntrance';
 import { createImageCincoHover } from '@/lib/note-renderer/imageCincoHover';
 import { selectNoteWidgetTab } from '@/lib/note-renderer/noteWidgets';
+import { getCardMobileThumbnailUrl, getCardThumbnailUrl } from '@/lib/note-renderer/imageVariant';
 import { renderNoteMarkdown } from '@/lib/note-renderer/renderNoteMarkdown';
 import { handleNoteTooltipEnter, handleNoteTooltipLeave, handleNoteTooltipAnimationEnd } from '@/lib/note-renderer/noteTooltip';
 import { NOTE_CATEGORIES, type NoteCategory } from '@/lib/note-categories';
@@ -13,7 +14,9 @@ import '@/lib/note-renderer/noteReader.css';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
-export function NotePreview({ title, category, date, body, entrance = false }: { title: string; category: NoteCategory; date: string; body: string; entrance?: boolean }) {
+export function NotePreview({ title, category, date, body, cover, entrance = false }: { title: string; category: NoteCategory; date: string; body: string; cover?: string; entrance?: boolean }) {
+  const [coverFailed, setCoverFailed] = useState(false);
+  useEffect(() => { setCoverFailed(false); }, [cover]);
   const reader = useRef<HTMLElement>(null);
   const hover = useRef<ReturnType<typeof createImageCincoHover> | null>(null);
   useEffect(() => {
@@ -56,7 +59,7 @@ export function NotePreview({ title, category, date, body, entrance = false }: {
   }
   return <>
     <article ref={reader} className="note-reader no-rem" data-note-enter={entrance ? 'pending' : undefined}>
-      <header className="note-reader__header"><div className="note-reader__heading"><h1>{title || '笔记标题'}</h1><div className="note-reader__meta"><span className="note-reader__category">[<span className="note-reader__category-text">{NOTE_CATEGORIES[category].label.en}</span>]</span><time dateTime={date}>{date.replace(/-/g, '/')}</time></div></div></header>
+      <header className="note-reader__header">{cover && !coverFailed && <picture key={cover} className="note-reader__cover" aria-hidden="true"><source media="(max-width: 768px)" srcSet={getCardMobileThumbnailUrl(cover)} /><img src={getCardThumbnailUrl(cover)} alt="" decoding="async" onError={() => setCoverFailed(true)} /></picture>}<div className="note-reader__heading"><h1>{title || '笔记标题'}</h1><div className="note-reader__meta"><span className="note-reader__category">[<span className="note-reader__category-text">{NOTE_CATEGORIES[category].label.en}</span>]</span><time dateTime={date}>{date.replace(/-/g, '/')}</time></div></div></header>
       <div className="note-markdown" onClick={follow} onKeyDown={imageKey} onPointerOver={event => { hoverImage(event, true); handleNoteTooltipEnter(event.nativeEvent); }} onPointerOut={event => { hoverImage(event, false); handleNoteTooltipLeave(event.nativeEvent); }} onFocus={event => handleNoteTooltipEnter(event.nativeEvent)} onBlur={event => handleNoteTooltipLeave(event.nativeEvent)} onAnimationEnd={event => handleNoteTooltipAnimationEnd(event.nativeEvent)} onPointerCancel={() => hover.current?.stop()} dangerouslySetInnerHTML={{ __html: html }} />
     </article>
     {image && <ManagementModal title={image.alt || '图片预览'} className="notes-image-modal" onClose={() => setImage(null)} footer={<ManagementButton icon="close" data-close-modal>关闭</ManagementButton>}><img src={image.src} alt={image.alt} /></ManagementModal>}

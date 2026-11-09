@@ -207,7 +207,7 @@ export function NotesManager({ canEdit }: { canEdit: boolean }) {
       </fieldset>
       <div className="notes-editor-grid">
         <label className="notes-editor">Markdown 正文<textarea aria-label="Markdown 正文" ref={bodyInput} disabled={busy} value={form.body} spellCheck={false} onChange={event => patchForm({ body: event.target.value })} placeholder="## 开始记录" /></label>
-        <section className="notes-preview-column" aria-label="Markdown 预览"><h2 className="notes-preview-heading">预览</h2><div className="notes-preview notes-reader-shell"><NotePreview title={form.title} category={form.category} date={form.date} body={form.body} /></div></section>
+        <section className="notes-preview-column" aria-label="Markdown 预览"><h2 className="notes-preview-heading">预览</h2><div className="notes-preview notes-reader-shell"><NotePreview cover={form.cover ? NOTE_ASSET_BASE + form.cover.trim().replace(/^\/+/, '') : undefined} title={form.title} category={form.category} date={form.date} body={form.body} /></div></section>
       </div>
       </ManagementModal>}
     </> : <p>当前账号仅可查看已发布笔记。</p>}
@@ -232,7 +232,7 @@ export function NotesManager({ canEdit }: { canEdit: boolean }) {
       </div>
     </section>
     {viewer && <ManagementModal className="notes-viewer-modal notes-reader-shell" title={viewer.metadata.title} onClose={() => setViewer(null)} footer={<ManagementButton icon="close" data-close-modal>关闭</ManagementButton>}>
-      <div className="notes-viewer"><NotePreview entrance title={viewer.metadata.title} category={viewer.metadata.type} date={viewer.metadata.time} body={viewer.body} /></div>
+      <div className="notes-viewer"><NotePreview cover={viewer.metadata.image} entrance title={viewer.metadata.title} category={viewer.metadata.type} date={viewer.metadata.time} body={viewer.body} /></div>
       <details className="notes-source"><summary>Markdown 原文</summary><pre>{viewer.source}</pre></details>
     </ManagementModal>}
     {deleteTarget && <ManagementModal title="删除笔记" danger busy={busy} closeRequested={deleteDone} onClose={() => { setDeleteTarget(null); setDeleteDone(false); }} description={`确定删除「${deleteTarget.title}」？删除后无法恢复${editing?.id === deleteTarget.id ? '，当前文章的本地编辑也会清空' : ''}。`} footer={<><ManagementButton icon="close" data-close-modal disabled={busy}>取消</ManagementButton><ManagementButton icon="delete" className="button-primary button-danger" disabled={busy} onClick={() => void removeNote()}>{busy ? '正在删除…' : '确认删除'}</ManagementButton></>}>

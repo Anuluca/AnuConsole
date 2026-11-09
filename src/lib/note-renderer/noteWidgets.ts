@@ -34,6 +34,7 @@ export function noteWidgets(
         /^(:{3,})\s+(gallery|tool-card|tabs|tab|social-links)(?:\s+(.+?))?\s*$/
       )
       if (!opening || state.sCount[start] - state.blkIndent >= 4) return false
+      const closing = new RegExp(`^:{${opening[1].length},}\\s*$`)
       let last = start + 1
       let codeFence = ''
       for (; last < end; last++) {
@@ -48,11 +49,7 @@ export function noteWidgets(
           )
             codeFence = ''
         }
-        if (
-          !codeFence &&
-          new RegExp(`^:{${opening[1].length},}\\s*$`).test(line)
-        )
-          break
+        if (!codeFence && closing.test(line)) break
       }
       if (last === end) return false
       if (silent) return true

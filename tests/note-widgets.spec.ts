@@ -3,7 +3,7 @@ import { openNavigation } from './helpers/navigation';
 
 const id='a12ee06a-a95f-4cbc-9b65-ff71bbca5371';
 const body='::::: tabs\n:::: tab BW\n::: gallery\n![BW 图片](https://assets.anuluca.com/Island/notes/pokemonCorocoro/BW/IMG_1763.jpg)\n:::\n::::\n:::: tab XY\n::: tool-card\n[工具](https://example.com/)\n\n工具说明\n:::\n::::\n:::::';
-const source=`---\ntitle: "内容块测试"\ndate: "2026-11-02"\ncategory: pokemon\n---\n\n${body}`;
+const source=`---\ntitle: "内容块测试"\ndate: "2026-11-02"\ncategory: pokemon\ncover: "https://assets.anuluca.com/Island/notes/pokemonCorocoro/BW2/IMG_2129.jpg"\n---\n\n${body}`;
 
 test('后台分组可切换，图片使用缩略图与原图，插入入口生成 Markdown', async ({page})=>{
   test.setTimeout(60000);
@@ -13,6 +13,8 @@ test('后台分组可切换，图片使用缩略图与原图，插入入口生�
   await page.goto('/anutrium/notes');
   await page.locator('.notes-row').getByRole('button',{name:'查看',exact:true}).click();
   const preview=page.locator('.notes-viewer-modal');
+  await expect(preview.locator('.note-reader__cover img')).toHaveCSS('object-fit', 'cover');
+  await expect(preview.locator('.note-reader__cover img')).toHaveCSS('object-position', '50% 45%');
   await expect(preview.locator('.note-widget-gallery img')).toHaveAttribute('src',/image=card-thumb/);
   await preview.locator('.note-widget-gallery img').click();
   await expect(page.locator('.notes-image-modal img')).toHaveAttribute('src',/IMG_1763.jpg$/);
@@ -22,6 +24,8 @@ test('后台分组可切换，图片使用缩略图与原图，插入入口生�
   await expect(preview.locator('.note-widget-gallery')).toBeHidden();
   await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'新建笔记',exact:true}).click();
+  await page.getByLabel('封面路径（可选）').fill('Island/notes/pokemonCorocoro/BW2/IMG_2129.jpg');
+  await expect(page.locator('.notes-preview .note-reader__cover img')).toHaveAttribute('src', /BW2\/IMG_2129.jpg\?image=card-thumb/);
   await page.locator('.notes-block-inserter summary').click();
   await page.getByLabel('图片路径与说明').fill('Island/notes/pokemonCorocoro/BW/IMG_1763.jpg | BW 图片');
   await page.getByRole('button',{name:'插入正文',exact:true}).click();

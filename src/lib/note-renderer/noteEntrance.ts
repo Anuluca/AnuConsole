@@ -7,6 +7,7 @@ export function createNoteEntrance(
   options?: { scroll: HTMLElement; viewport: HTMLElement }
 ) {
   const header = reader.querySelector<HTMLElement>('.note-reader__header')!
+  const heading = header.querySelector<HTMLElement>('.note-reader__heading')!
   const title = header.querySelector<HTMLElement>('h1')!
   const meta = header.querySelector<HTMLElement>('.note-reader__meta')!
   const category = meta.querySelector<HTMLElement>('.note-reader__category')!
@@ -167,19 +168,54 @@ export function createNoteEntrance(
       (frame.clientHeight - 32) / bounds.height
     )
     const titleBounds = title.getBoundingClientRect()
+    // 以首行字形顶部被柔边完全揭开为可见完成点，不把缓动长尾算入停顿。
+    const textBox = titleRange.getClientRects()[0] || titleBounds
+    let inkTop = textBox.top
+    const fontContext = document.createElement('canvas').getContext('2d')
+    if (fontContext) {
+      const style = getComputedStyle(title)
+      fontContext.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+      const metrics = fontContext.measureText(title.textContent || '')
+      if (Number.isFinite(metrics.fontBoundingBoxAscent))
+        inkTop +=
+          metrics.fontBoundingBoxAscent - metrics.actualBoundingBoxAscent
+    }
+    const visibleProgress = gsap.utils.clamp(
+      0,
+      1,
+      (100 *
+        (1 - (inkTop - titleBounds.top) / Math.max(1, titleBounds.height)) +
+        4) /
+        104
+    )
+    let low = 0
+    let high = 1
+    for (let step = 0; step < 24; step++) {
+      const middle = (low + high) / 2
+      if (titleEase(middle) < visibleProgress) low = middle
+      else high = middle
+    }
+    const titleVisibleAt = high * 2.4
     const metadataBounds = meta.getBoundingClientRect()
     const contentCenter =
       (Math.min(titleBounds.top, metadataBounds.top) +
         Math.max(titleBounds.bottom, metadataBounds.bottom)) /
       2
-    const headerCenter = bounds.top + bounds.height / 2
+    const headingBounds = heading.getBoundingClientRect()
+    const headingCenter = headingBounds.top + headingBounds.height / 2
     // 以标题和元信息的实际可见范围居中，兼容固定标题区的对称内边距。
     const y =
       viewport.top +
       frame.clientHeight / 2 -
-      headerCenter -
-      (contentCenter - headerCenter) * scale
-    // 对应参考页 4% 高度的 smoothstep 柔边；通过遮罩保留原始可选中文字。
+      headingCenter -
+      (contentCenter - headingCenter) * scale
+    const introScale = Math.min(
+      scale * 1.25,
+      (frame.clientWidth - 16) / Math.max(1, textWidth),
+      (frame.clientHeight - 16) / Math.max(1, bounds.height)
+    )
+    const introY = y - (contentCenter - headingCenter) * (introScale - scale)
+    // 整段标题共用柔边遮罩，不拆字或改变原始文本结构。
     const mask = `linear-gradient(to top, ${Array.from(
       { length: 17 },
       (_, index) => {
@@ -191,21 +227,40 @@ export function createNoteEntrance(
       }
     ).join(',')})`
     context.add(() => {
-      gsap.set(header, { y, scale, transformOrigin: '50% 50%' })
+      // 背景保持自然布局，仅标题内容参与入场位移和缩放。
+      gsap.set(heading, {
+        y: introY,
+        scale: introScale,
+        transformOrigin: '50% 50%',
+      })
       gsap.set(title, {
         maskImage: mask,
         webkitMaskImage: mask,
         '--note-title-reveal': '0%',
       })
-      gsap.set([category, date], { opacity: 0 })
+      gsap.set([category, date], {
+        opacity: 0,
+        scale: 0.86,
+        transformOrigin: '50% 50%',
+      })
       reader.dataset.noteEnter = 'title'
       gsap
         .timeline()
         .to(
+          heading,
+          {
+            y,
+            scale,
+            duration: titleVisibleAt,
+            ease: 'power1.out',
+          },
+          0
+        )
+        .to(
           title,
           {
             '--note-title-reveal': '104%',
-            duration: 1.8,
+            duration: 2.4,
             ease: titleEase,
           },
           0
@@ -213,14 +268,8 @@ export function createNoteEntrance(
         .set(title, {
           clearProps: 'maskImage,webkitMaskImage,--note-title-reveal',
         })
-        // 在擦入可见阶段同步闪烁两次，不等待遮罩擦入结束。
-        .set(title, { opacity: 1 }, 0.42)
-        .set(title, { opacity: 0 }, 0.48)
-        .set(title, { opacity: 1 }, 0.54)
-        .set(title, { opacity: 0 }, 0.6)
-        .set(title, { clearProps: 'opacity' }, 0.66)
-        // 擦入的缓动尾段已几乎没有视觉变化，让元信息在收尾时衔接出现。
-        .addLabel('meta', 1.08)
+        .addLabel('titleVisible', titleVisibleAt)
+        .addLabel('meta', 'titleVisible+=0.5')
         .call(
           () => {
             reader.dataset.noteEnter = 'meta'
@@ -228,17 +277,29 @@ export function createNoteEntrance(
           [],
           'meta'
         )
-        // 标签先闪烁两次，再播放日期；全部显示后开始计算居中停顿。
+        // 标签与日期依次快速闪烁两下，同时从略小尺寸放大至自然字号。
         .set(category, { opacity: 1 }, 'meta')
-        .set(category, { opacity: 0 }, 'meta+=0.07')
-        .set(category, { opacity: 1 }, 'meta+=0.14')
-        .set(category, { opacity: 0 }, 'meta+=0.21')
-        .set(category, { clearProps: 'opacity' }, 'meta+=0.28')
+        .set(category, { opacity: 0 }, 'meta+=0.05')
+        .set(category, { opacity: 1 }, 'meta+=0.1')
+        .set(category, { opacity: 0 }, 'meta+=0.15')
+        .set(category, { clearProps: 'opacity' }, 'meta+=0.2')
+        .to(category, { scale: 1, duration: 0.28, ease: 'power2.out' }, 'meta')
+        .set(
+          category,
+          { clearProps: 'transform,transformOrigin' },
+          'meta+=0.28'
+        )
         .set(date, { opacity: 1 }, 'meta+=0.28')
-        .set(date, { opacity: 0 }, 'meta+=0.35')
-        .set(date, { opacity: 1 }, 'meta+=0.42')
-        .set(date, { opacity: 0 }, 'meta+=0.49')
-        .set(date, { clearProps: 'opacity' }, 'meta+=0.56')
+        .set(date, { opacity: 0 }, 'meta+=0.33')
+        .set(date, { opacity: 1 }, 'meta+=0.38')
+        .set(date, { opacity: 0 }, 'meta+=0.43')
+        .set(date, { clearProps: 'opacity' }, 'meta+=0.48')
+        .to(
+          date,
+          { scale: 1, duration: 0.28, ease: 'power2.out' },
+          'meta+=0.28'
+        )
+        .set(date, { clearProps: 'transform,transformOrigin' }, 'meta+=0.56')
         .addLabel('hold', 'meta+=0.56')
         .call(
           () => {
@@ -256,11 +317,11 @@ export function createNoteEntrance(
           'moving'
         )
         .to(
-          header,
+          heading,
           { y: 0, scale: 1, duration: 1.6, ease: 'power3.inOut' },
           'moving'
         )
-        .set(header, { clearProps: 'transform,transformOrigin' })
+        .set(heading, { clearProps: 'transform,transformOrigin' })
         .call(revealBody)
     })
   }

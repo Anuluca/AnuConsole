@@ -1,8 +1,8 @@
 // 标签入口：新增条目后，前台文案、后台选项与文件校验自动使用同一份定义。
 export const NOTE_CATEGORIES = {
-  technology: { label: { zhCn: '技术', en: 'TECHNOLOGY' } },
-  pokemon: { label: { zhCn: '宝可梦', en: 'POKÉMON' } },
   daily: { label: { zhCn: '日常', en: 'DAILY' } },
+  pokemon: { label: { zhCn: '宝可梦', en: 'POKÉMON' } },
+  technology: { label: { zhCn: '技术', en: 'TECHNOLOGY' } },
   design: { label: { zhCn: '设计', en: 'DESIGN' } },
   test: { label: { zhCn: '测试', en: 'TEST' }, excludeFromAll: true },
 } as const
